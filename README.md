@@ -1,5 +1,7 @@
 # Geeklog Store
 
+![Coming soon](docs/images/geeklog-store-plugin-coming-soon.png)
+
 Geeklog Store is a modular e-commerce plugin for the Geeklog CMS.
 
 It is designed to provide a modern commerce foundation for Geeklog without tying the plugin to a single payment provider or a single country.
