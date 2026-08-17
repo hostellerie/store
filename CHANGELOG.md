@@ -27,6 +27,16 @@ This development snapshot introduces Store's first international commerce calcul
 - 0.7.0 order detail and POS receipt totals
 - 0.7.0 architecture and alpha test documentation
 - Automated PHP 5.6 / PHP 8.3 syntax and calculator regression checks
+- Complete English and French labels for all Store configuration parameters
+- Store configuration tabs for General, Catalogue, Checkout and payment, Tax and shipping, and Display
+- Public Store layout setting: no side columns, left only, right only, or both
+- Public product display of configured weight and dimensions for physical products
+
+### Changed
+
+- Existing 0.7.0 alpha installations automatically receive the clearer configuration-tab organization without resetting saved values.
+- Public Store pages now consistently use the configured Geeklog block-column layout.
+- Physical product dimensions are shown only when at least one configured measurement is greater than zero.
 
 ### Upgrade
 
