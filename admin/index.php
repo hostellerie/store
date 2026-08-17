@@ -43,6 +43,7 @@ if (!SEC_hasRights('store.admin')) {
 }
 
 require_once $_CONF['path'] . 'plugins/store/includes/commerce.php';
+require_once $_CONF['path'] . 'plugins/store/includes/pos070.php';
 
 // Alpha migration bootstrap. This keeps an existing 0.6.x test installation
 // usable while the standard plugin_upgrade_store() wiring is finalized.
@@ -75,5 +76,6 @@ require_once __DIR__ . '/includes/editor.php';
 require_once __DIR__ . '/includes/routes-commerce.php';
 require_once __DIR__ . '/includes/routes-product-commerce.php';
 require_once __DIR__ . '/includes/routes-core.php';
+require_once __DIR__ . '/includes/routes-pos070.php';
 require_once __DIR__ . '/includes/routes-pos.php';
 require_once __DIR__ . '/includes/routes-orders.php';
