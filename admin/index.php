@@ -45,22 +45,6 @@ if (!SEC_hasRights('store.admin')) {
 require_once $_CONF['path'] . 'plugins/store/includes/commerce.php';
 require_once $_CONF['path'] . 'plugins/store/includes/pos070.php';
 
-// Alpha migration bootstrap. This keeps an existing 0.6.x test installation
-// usable while the standard plugin_upgrade_store() wiring is finalized.
-$installedStoreVersion = DB_getItem($_TABLES['plugins'], 'pi_version', "pi_name='store'");
-if ($installedStoreVersion !== '' && version_compare($installedStoreVersion, '0.7.0', '<')) {
-    require_once $_CONF['path'] . 'plugins/store/includes/upgrade070.php';
-    if (!store_upgrade_to_070()) {
-        COM_errorLog('Store Plugin 0.7.0: automatic alpha migration failed.');
-        COM_output(COM_createHTMLDocument(
-            COM_showMessageText('Store 0.7.0 database migration failed. Check error.log before continuing.', 'Store 0.7.0'),
-            array('pagetitle' => 'Store 0.7.0')
-        ));
-        exit;
-    }
-    DB_query("UPDATE {$_TABLES['plugins']} SET pi_version='0.7.0',pi_gl_version='2.1.1' WHERE pi_name='store'", 1);
-}
-
 $commerceLanguage = isset($_CONF['language']) ? $_CONF['language'] : 'english';
 $commerceLanguageFile = $_CONF['path'] . 'plugins/store/language/commerce/' . $commerceLanguage . '.php';
 if (!is_file($commerceLanguageFile) && strpos($commerceLanguage, 'french') === 0) {
