@@ -1,0 +1,56 @@
+name: Apply Store 0.7.0 UI feedback
+
+on:
+  push:
+    branches:
+      - feature/0.7.0-taxes-shipping-totals
+    paths:
+      - tools/apply-070-ui-feedback.py
+      - .github/workflows/apply-070-ui-feedback.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/0.7.0-taxes-shipping-totals
+
+      - name: Apply configuration and layout feedback
+        run: python3 tools/apply-070-ui-feedback.py
+
+      - name: Set up PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Lint changed PHP sources
+        shell: bash
+        run: |
+          php -l install_defaults.php
+          php -l functions.inc
+          php -l autoinstall.php
+          php -l includes/config071.php
+          php -l public_html/index.php
+          php -l includes/public-order070.php
+          php -l language/english.php
+          php -l language/french.php
+          php -l language/french_france.php
+
+      - name: Commit UI feedback changes
+        shell: bash
+        run: |
+          if git diff --quiet; then
+              echo 'No changes required.'
+              exit 0
+          fi
+          git config user.name 'hostellerie'
+          git config user.email 'hostellerie.org@gmail.com'
+          git add install_defaults.php functions.inc autoinstall.php includes/config071.php public_html/index.php includes/public-order070.php language/english.php language/french.php language/french_france.php
+          git commit -m 'Refine Store configuration tabs and public layout [skip ci]'
+          git push origin HEAD:feature/0.7.0-taxes-shipping-totals
