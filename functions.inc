@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Store Plugin 0.6.5                                                       |
+// | Store Plugin 0.7.0                                                       |
 // +---------------------------------------------------------------------------+
 // | functions.inc                                                            |
 // |                                                                          |
@@ -55,6 +55,27 @@ if (!isset($_TABLES['store_order_items'])) {
 if (!isset($_TABLES['store_payments'])) {
     $_TABLES['store_payments'] = $_DB_table_prefix . 'store_payments';
 }
+if (!isset($_TABLES['store_tax_classes'])) {
+    $_TABLES['store_tax_classes'] = $_DB_table_prefix . 'store_tax_classes';
+}
+if (!isset($_TABLES['store_tax_zones'])) {
+    $_TABLES['store_tax_zones'] = $_DB_table_prefix . 'store_tax_zones';
+}
+if (!isset($_TABLES['store_tax_zone_locations'])) {
+    $_TABLES['store_tax_zone_locations'] = $_DB_table_prefix . 'store_tax_zone_locations';
+}
+if (!isset($_TABLES['store_tax_rates'])) {
+    $_TABLES['store_tax_rates'] = $_DB_table_prefix . 'store_tax_rates';
+}
+if (!isset($_TABLES['store_shipping_zones'])) {
+    $_TABLES['store_shipping_zones'] = $_DB_table_prefix . 'store_shipping_zones';
+}
+if (!isset($_TABLES['store_shipping_zone_locations'])) {
+    $_TABLES['store_shipping_zone_locations'] = $_DB_table_prefix . 'store_shipping_zone_locations';
+}
+if (!isset($_TABLES['store_shipping_methods'])) {
+    $_TABLES['store_shipping_methods'] = $_DB_table_prefix . 'store_shipping_methods';
+}
 
 $store_plugin_path = $_CONF['path'] . 'plugins/store/';
 $lang = isset($_CONF['language']) ? $_CONF['language'] : 'english';
@@ -68,6 +89,9 @@ if (file_exists($langfile)) {
 require_once $_CONF['path_system'] . 'classes/config.class.php';
 $store_config = config::get_instance();
 $_STORE_CONF = $store_config->get_config('store');
+
+// Store 0.7.0 centralizes monetary, tax and shipping calculations here.
+require_once $store_plugin_path . 'includes/commerce.php';
 
 function store_escape($value)
 {
@@ -966,12 +990,12 @@ function plugin_getheadercode_store()
 
 function plugin_getversion_store()
 {
-    return '0.6.5';
+    return '0.7.0';
 }
 
 function plugin_chkVersion_store()
 {
-    return '0.6.5';
+    return '0.7.0';
 }
 
 function plugin_upgrade_store()
@@ -1120,9 +1144,18 @@ function plugin_upgrade_store()
     }
 
     // 0.6.5 is a stabilization/documentation release: no schema migration.
-    DB_query("UPDATE {$_TABLES['plugins']} SET pi_version = '0.6.5', pi_gl_version = '2.1.1' WHERE pi_name = 'store'", 1);
+
+    if (version_compare($installed, '0.7.0', '<')) {
+        require_once $_CONF['path'] . 'plugins/store/includes/upgrade070.php';
+        if (!store_upgrade_to_070()) {
+            COM_errorLog('Store Plugin: failed to migrate database to 0.7.0.');
+            return false;
+        }
+    }
+
+    DB_query("UPDATE {$_TABLES['plugins']} SET pi_version = '0.7.0', pi_gl_version = '2.1.1' WHERE pi_name = 'store'", 1);
     if (DB_error()) {
-        COM_errorLog('Store Plugin: failed to update plugin metadata to 0.6.5.');
+        COM_errorLog('Store Plugin: failed to update plugin metadata to 0.7.0.');
         return false;
     }
     return true;
@@ -1131,7 +1164,21 @@ function plugin_upgrade_store()
 function plugin_autouninstall_store()
 {
     return array(
-        'tables' => array('store_payments', 'store_order_items', 'store_orders', 'store_product_images', 'store_products', 'store_categories'),
+        'tables' => array(
+            'store_shipping_methods',
+            'store_shipping_zone_locations',
+            'store_shipping_zones',
+            'store_tax_rates',
+            'store_tax_zone_locations',
+            'store_tax_zones',
+            'store_tax_classes',
+            'store_payments',
+            'store_order_items',
+            'store_orders',
+            'store_product_images',
+            'store_products',
+            'store_categories'
+        ),
         'groups' => array('Store Admin'),
         'features' => array(
             'store.admin',
