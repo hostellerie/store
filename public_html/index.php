@@ -2,11 +2,11 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Store Plugin 0.6.5                                                       |
+// | Store Plugin 0.7.0                                                       |
 // +---------------------------------------------------------------------------+
 // | index.php                                                                |
-// |                                                                          |
-// | Public catalogue, cart, checkout and customer order pages.               |
+// |                                                                           |
+// | Public catalogue, cart, international checkout and customer order pages. |
 // +---------------------------------------------------------------------------+
 // | Copyright (C) 2026 by Geeklog Store contributors                         |
 // +---------------------------------------------------------------------------+
@@ -32,7 +32,13 @@ require_once dirname(__FILE__) . '/../lib-common.php';
 
 global $_CONF, $_TABLES, $_STORE_CONF, $LANG_STORE;
 
+require_once $_CONF['path'] . 'plugins/store/includes/commerce.php';
+require_once $_CONF['path'] . 'plugins/store/includes/orders070.php';
+require_once $_CONF['path'] . 'plugins/store/includes/checkout070.php';
+require_once $_CONF['path'] . 'plugins/store/includes/checkout070-view.php';
+
 $content = '';
+$checkout_error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['store_action'])) {
     if (SEC_checkToken()) {
@@ -66,6 +72,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['store_action'])) {
             exit;
         }
 
+        if ($_POST['store_action'] === 'place_order070') {
+            $input070 = store_checkout070_input($_POST);
+            $customer070 = array(
+                'name' => $input070['name'],
+                'email' => $input070['email'],
+                'address1' => $input070['address1'],
+                'address2' => $input070['address2'],
+                'postal_code' => $input070['postal_code'],
+                'city' => $input070['city'],
+                'region' => $input070['region'],
+                'country' => $input070['country'],
+                'country_code' => $input070['country_code']
+            );
+            $created070 = store_create_order070(
+                $customer070,
+                $input070['payment_method'],
+                $input070['shipping_method_id']
+            );
+            if (!empty($created070['success'])) {
+                header('Location: ' . $_CONF['site_url'] . '/store/index.php?view=order&id=' . (int) $created070['order_id']
+                    . '&created=1');
+                exit;
+            }
+            $checkout_error = isset($created070['error']) ? $created070['error'] : 'database';
+        }
+
+        // Keep legacy handler available during the alpha for direct compatibility.
         if ($_POST['store_action'] === 'place_order') {
             $customer = array(
                 'name' => isset($_POST['customer_name']) ? $_POST['customer_name'] : '',
@@ -90,6 +123,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['store_action'])) {
 
 $view = isset($_GET['view']) ? (string) $_GET['view'] : '';
 $slug = isset($_GET['product']) ? trim((string) $_GET['product']) : '';
+
+if ($view === 'checkout') {
+    $input070 = store_checkout070_input($_SERVER['REQUEST_METHOD'] === 'POST' ? $_POST : array());
+    $content = store_render_checkout070($input070, $checkout_error);
+    COM_output(COM_createHTMLDocument($content, array('pagetitle' => $LANG_STORE['checkout'])));
+    exit;
+}
 
 if ($view === 'cart') {
     $cart = store_cart_get();
@@ -137,69 +177,6 @@ if ($view === 'cart') {
 
     $content .= '<p><a href="' . store_escape($_CONF['site_url'] . '/store/index.php') . '">'
         . store_escape($LANG_STORE['continue_shopping']) . '</a></p></div>';
-} elseif ($view === 'checkout') {
-    $details = store_cart_details();
-    $content .= '<h1>' . store_escape($LANG_STORE['checkout']) . '</h1>';
-    if (!$details['items']) {
-        $content .= '<p>' . store_escape($LANG_STORE['cart_empty']) . '</p>';
-    } elseif ($details['error'] !== '') {
-        $content .= COM_showMessageText(
-            $details['error'] === 'currency' ? $LANG_STORE['checkout_currency_error'] : $LANG_STORE['checkout_stock_error'],
-            $LANG_STORE['checkout']
-        );
-    } else {
-        if (!empty($checkout_error)) {
-            $error_key = 'checkout_' . $checkout_error . '_error';
-            $error_text = isset($LANG_STORE[$error_key]) ? $LANG_STORE[$error_key] : $LANG_STORE['checkout_database_error'];
-            $content .= COM_showMessageText($error_text, $LANG_STORE['checkout']);
-        }
-        $default_name = !empty($_USER['fullname']) ? $_USER['fullname'] : (!empty($_USER['username']) ? $_USER['username'] : '');
-        $default_email = !empty($_USER['email']) ? $_USER['email'] : '';
-        $payment_methods = store_get_payment_methods();
-        if (!$payment_methods) {
-            $content .= COM_showMessageText($LANG_STORE['checkout_payment_error'], $LANG_STORE['checkout']);
-        }
-        $content .= '<p>' . store_escape($LANG_STORE['checkout_intro']) . '</p><div class="store-checkout-layout">';
-        $content .= '<section class="store-checkout-panel"><h2>' . store_escape($LANG_STORE['customer_details']) . '</h2>'
-            . '<form method="post" class="store-checkout-form">'
-            . '<input type="hidden" name="store_action" value="place_order">'
-            . '<input type="hidden" name="' . CSRF_TOKEN . '" value="' . store_escape(SEC_createToken()) . '">'
-            . '<label>' . store_escape($LANG_STORE['customer_name']) . '</label><input type="text" name="customer_name" required value="'
-            . store_escape(isset($_POST['customer_name']) ? $_POST['customer_name'] : $default_name) . '">'
-            . '<label>' . store_escape($LANG_STORE['customer_email']) . '</label><input type="email" name="customer_email" required value="'
-            . store_escape(isset($_POST['customer_email']) ? $_POST['customer_email'] : $default_email) . '">'
-            . '<label>' . store_escape($LANG_STORE['address1']) . '</label><input type="text" name="address1" value="'
-            . store_escape(isset($_POST['address1']) ? $_POST['address1'] : '') . '">'
-            . '<label>' . store_escape($LANG_STORE['address2']) . '</label><input type="text" name="address2" value="'
-            . store_escape(isset($_POST['address2']) ? $_POST['address2'] : '') . '">'
-            . '<div class="store-checkout-row"><div><label>' . store_escape($LANG_STORE['postal_code']) . '</label><input type="text" name="postal_code" value="'
-            . store_escape(isset($_POST['postal_code']) ? $_POST['postal_code'] : '') . '"></div><div><label>'
-            . store_escape($LANG_STORE['city']) . '</label><input type="text" name="city" value="'
-            . store_escape(isset($_POST['city']) ? $_POST['city'] : '') . '"></div></div>'
-            . '<label>' . store_escape($LANG_STORE['country']) . '</label><input type="text" name="country" value="'
-            . store_escape(isset($_POST['country']) ? $_POST['country'] : '') . '">';
-        $content .= '<h2>' . store_escape($LANG_STORE['payment']) . '</h2><div class="store-payment-options">';
-        $selected_payment = isset($_POST['payment_method']) ? (string) $_POST['payment_method'] : '';
-        $first_payment = true;
-        foreach ($payment_methods as $payment_id => $payment_method) {
-            $checked = ($selected_payment === $payment_id || ($selected_payment === '' && $first_payment)) ? ' checked' : '';
-            $content .= '<label class="store-payment-option"><input type="radio" name="payment_method" value="'
-                . store_escape($payment_id) . '"' . $checked . '> <strong>' . store_escape($payment_method['label']) . '</strong></label>';
-            $first_payment = false;
-        }
-        $content .= '</div>';
-        if ($payment_methods) {
-            $content .= '<p><button class="store-primary-button" type="submit">' . store_escape($LANG_STORE['place_order']) . '</button></p>';
-        }
-        $content .= '</form></section>';
-        $content .= '<aside class="store-order-card"><h2>' . store_escape($LANG_STORE['order_details']) . '</h2><table class="store-order-summary-table">';
-        foreach ($details['items'] as $item) {
-            $content .= '<tr><td>' . store_escape($item['product']['name']) . ' × ' . (int) $item['quantity'] . '</td><td>'
-                . store_format_price($item['line_total'], $item['product']['currency']) . '</td></tr>';
-        }
-        $content .= '<tr><th>' . store_escape($LANG_STORE['total']) . '</th><th>'
-            . store_format_price($details['total'], $details['currency']) . '</th></tr></table></aside></div>';
-    }
 } elseif ($view === 'orders') {
     $uid = isset($_USER['uid']) ? (int) $_USER['uid'] : 1;
     $content .= '<h1>' . store_escape($LANG_STORE['my_orders']) . '</h1>';
@@ -244,12 +221,28 @@ if ($view === 'cart') {
             $content .= '<tr><td>' . store_escape($item['name']) . '</td><td>' . (int) $item['quantity'] . '</td><td>'
                 . store_format_price($item['line_total'], $order['currency']) . '</td></tr>';
         }
+        if (isset($order['items_subtotal'])) {
+            $content .= '<tr><th colspan="2">Subtotal</th><th>'
+                . store_format_price($order['items_subtotal'], $order['currency']) . '</th></tr>';
+        }
+        if (!empty($order['shipping_label']) || (isset($order['shipping_subtotal']) && store_money_to_minor($order['shipping_subtotal']) !== 0)) {
+            $shippingTitle = $order['shipping_label'] !== '' ? $order['shipping_label'] : 'Shipping';
+            $content .= '<tr><th colspan="2">' . store_escape($shippingTitle) . '</th><th>'
+                . store_format_price($order['shipping_subtotal'], $order['currency']) . '</th></tr>';
+        }
+        if (isset($order['tax_total']) && (store_money_to_minor($order['tax_total']) !== 0 || !empty($_STORE_CONF['tax_enabled']))) {
+            $content .= '<tr><th colspan="2">Taxes</th><th>'
+                . store_format_price($order['tax_total'], $order['currency']) . '</th></tr>';
+        }
         $content .= '<tr><th colspan="2">' . store_escape($LANG_STORE['total']) . '</th><th>'
             . store_format_price($order['total'], $order['currency']) . '</th></tr></table></section>'
             . '<aside class="store-order-card"><h2>' . store_escape($LANG_STORE['customer']) . '</h2><p><strong>'
             . store_escape($order['customer_name']) . '</strong><br>' . store_escape($order['customer_email']) . '</p><p>'
             . store_escape($order['address1']) . ($order['address2'] !== '' ? '<br>' . store_escape($order['address2']) : '')
-            . '<br>' . store_escape(trim($order['postal_code'] . ' ' . $order['city'])) . '<br>' . store_escape($order['country']) . '</p>';
+            . '<br>' . store_escape(trim($order['postal_code'] . ' ' . $order['city']))
+            . (!empty($order['region']) ? '<br>' . store_escape($order['region']) : '')
+            . '<br>' . store_escape($order['country'])
+            . (!empty($order['country_code']) ? ' (' . store_escape($order['country_code']) . ')' : '') . '</p>';
         $payment = store_get_payment($order_id);
         $methods = store_get_payment_methods();
         $payment_label = isset($methods[$order['payment_method']]['label']) ? $methods[$order['payment_method']]['label'] : $order['payment_method'];
