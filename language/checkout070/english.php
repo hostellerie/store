@@ -19,6 +19,7 @@ $LANG_STORE_CHECKOUT070 = array(
     'shipping_method' => 'Shipping method',
     'shipping' => 'Shipping',
     'no_shipping' => 'No shipping method is available for this destination.',
+    'update_quote' => 'Update shipping and taxes',
     'subtotal' => 'Subtotal',
     'taxes' => 'Taxes',
     'tax_included' => 'Configured product prices include tax.',
