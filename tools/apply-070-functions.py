@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# One-time migration helper for the 0.7.0 development branch.
 path = Path('functions.inc')
 text = path.read_text(encoding='utf-8')
 
