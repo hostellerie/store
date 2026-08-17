@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Store Plugin 0.6.5                                                       |
+// | Store Plugin 0.7.0                                                       |
 // +---------------------------------------------------------------------------+
 // | french_france.php                                                        |
 // |                                                                          |
@@ -212,5 +212,5 @@ $LANG_STORE = array(
     'roadmap_intro' => 'Feuille de route technique évolutive pour le développement international de Geeklog Store.',
     'roadmap_file_missing' => 'Le fichier de feuille de route de Store est introuvable.',
     'roadmap_updated' => 'Feuille de route intégrée à Store %s.',
-    'version' => 'Version 0.6.5'
+    'version' => 'Version 0.7.0'
 );
