@@ -144,3 +144,71 @@ The detailed roadmap is available in:
 
 ```text
 docs/ROADMAP.md
+````
+
+It can also be viewed directly from the Store administration interface.
+
+## Marketplace direction
+
+Store is currently a single-store system, but its architecture is intended to evolve toward optional marketplace capabilities.
+
+Future marketplace features may include:
+
+* multiple sellers
+* seller-specific storefronts
+* products in a shared catalog
+* vendor-specific administration
+* platform commissions
+* multi-vendor orders
+* seller balances
+* payouts
+* vendor reporting
+
+Single-store installations should remain simple and should not be forced to use marketplace functionality.
+
+## Suppliers and inventory
+
+Store also plans to distinguish sellers from suppliers.
+
+Future supplier management may include:
+
+* supplier references
+* purchase prices
+* preferred suppliers
+* reorder thresholds
+* target stock levels
+* purchase orders
+* partial deliveries
+* stock replenishment
+* supplier price history
+
+## Requirements
+
+Store is intended to support:
+
+* Geeklog 2.1.1 and later
+* PHP 5.6 and later where technically possible
+
+Development and testing currently focus on modern Geeklog installations while maintaining backward compatibility as long as it remains reasonable.
+
+## Installation
+
+Install Store like a standard Geeklog plugin:
+
+1. Copy the plugin files into the appropriate Geeklog directories.
+2. Open the Geeklog Plugin Administration page.
+3. Install Store.
+4. Configure the plugin from the Geeklog Configuration interface.
+5. Open the Store administration page to create products.
+
+## Status
+
+Store is currently under active development.
+
+The current releases should be considered development / testing versions until the project reaches a stable 1.0 release.
+
+Testing, bug reports and feedback are welcome.
+
+## License
+
+See the license information included with the project.
