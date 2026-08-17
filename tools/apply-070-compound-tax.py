@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# One-time compound-tax migration helper for Store 0.7.0.
 path = Path('includes/commerce.php')
 text = path.read_text(encoding='utf-8')
 
