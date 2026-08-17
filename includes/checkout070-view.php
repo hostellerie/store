@@ -98,7 +98,6 @@ function store_render_checkout070($input, $error = '')
     $html .= '<p>' . store_escape(isset($lang['intro']) ? $lang['intro'] : $LANG_STORE['checkout_intro']) . '</p>';
     $html .= '<div class="store-checkout-layout">';
     $html .= '<section class="store-checkout-panel"><form method="post" class="store-checkout-form">'
-        . '<input type="hidden" name="store_action" value="place_order070">'
         . '<input type="hidden" name="' . CSRF_TOKEN . '" value="' . store_escape(SEC_createToken()) . '">';
 
     $html .= '<h2>' . store_escape($LANG_STORE['customer_details']) . '</h2>'
@@ -149,6 +148,9 @@ function store_render_checkout070($input, $error = '')
         $html .= '<input type="hidden" name="country_code" value="' . store_escape($input['country_code']) . '">';
     }
 
+    $html .= '<p><button class="store-secondary-button" type="submit" name="store_action" value="quote070">'
+        . store_escape(isset($lang['update_quote']) ? $lang['update_quote'] : 'Update shipping and taxes') . '</button></p>';
+
     $html .= '<h2>' . store_escape($LANG_STORE['payment']) . '</h2><div class="store-payment-options">';
     $firstPayment = true;
     foreach ($paymentMethods as $paymentId => $paymentMethod) {
@@ -164,7 +166,8 @@ function store_render_checkout070($input, $error = '')
         $canSubmit = $canSubmit && $selectedShipping > 0;
     }
     if ($canSubmit) {
-        $html .= '<p><button class="store-primary-button" type="submit">' . store_escape($LANG_STORE['place_order']) . '</button></p>';
+        $html .= '<p><button class="store-primary-button" type="submit" name="store_action" value="place_order070">'
+            . store_escape($LANG_STORE['place_order']) . '</button></p>';
     }
     $html .= '</form></section>';
 
