@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# One-time compatibility cleanup before the first 0.7.0 alpha package.
 for filename in ('includes/orders070.php', 'includes/pos070.php'):
     path = Path(filename)
     text = path.read_text(encoding='utf-8')
