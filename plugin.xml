@@ -1,7 +1,7 @@
 <plugin>
   <pi_name>store</pi_name>
   <pi_display_name>Store</pi_display_name>
-  <pi_version>0.6.5</pi_version>
+  <pi_version>0.7.0</pi_version>
   <pi_gl_version>2.1.1</pi_gl_version>
   <pi_homepage>https://github.com/Geeklog-Plugins/store</pi_homepage>
 </plugin>
