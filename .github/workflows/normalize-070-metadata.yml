@@ -1,0 +1,51 @@
+name: Normalize Store 0.7.0 metadata
+
+on:
+  push:
+    branches:
+      - feature/0.7.0-taxes-shipping-totals
+    paths:
+      - tools/normalize-070-metadata.py
+      - .github/workflows/normalize-070-metadata.yml
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/0.7.0-taxes-shipping-totals
+
+      - name: Normalize headers and language version labels
+        run: python3 tools/normalize-070-metadata.py
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Lint normalized PHP sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+              php -l "$file"
+          done < <(find . -type f \( -name '*.php' -o -name 'functions.inc' \) -print0)
+
+      - name: Commit metadata updates
+        shell: bash
+        run: |
+          if git diff --quiet; then
+              echo 'No metadata changes required.'
+              exit 0
+          fi
+          git config user.name 'hostellerie'
+          git config user.email 'hostellerie.org@gmail.com'
+          git add -u
+          git commit -m 'Normalize Store 0.7.0 PHP metadata [skip ci]'
+          git push origin HEAD:feature/0.7.0-taxes-shipping-totals
