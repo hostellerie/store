@@ -90,8 +90,53 @@ require_once $_CONF['path_system'] . 'classes/config.class.php';
 $store_config = config::get_instance();
 $_STORE_CONF = $store_config->get_config('store');
 
+if (!is_array($_STORE_CONF) || !isset($_STORE_CONF['layout_blocks'])) {
+    require_once $store_plugin_path . 'includes/config071.php';
+    if (!store_config070_ui_ensure()) {
+        COM_errorLog('Store Plugin: failed to update configuration tabs/layout settings.');
+    }
+    $_STORE_CONF = $store_config->get_config('store');
+}
+
 // Store 0.7.0 centralizes monetary, tax and shipping calculations here.
 require_once $store_plugin_path . 'includes/commerce.php';
+
+
+/**
+ * Build Geeklog document options for public Store pages.
+ *
+ * layout_blocks describes the columns that remain visible:
+ * none = full width, left = left only, right = right only, both = both.
+ *
+ * @param string $pageTitle
+ * @return array
+ */
+function store_document_options($pageTitle)
+{
+    global $_STORE_CONF;
+
+    $layout = isset($_STORE_CONF['layout_blocks']) ? (string) $_STORE_CONF['layout_blocks'] : 'none';
+    if (!in_array($layout, array('none', 'left', 'right', 'both'), true)) {
+        $layout = 'none';
+    }
+
+    $options = array('pagetitle' => $pageTitle);
+    $options['what'] = ($layout === 'left' || $layout === 'both') ? 'menu' : 'none';
+    $options['rightblock'] = ($layout === 'right' || $layout === 'both');
+    return $options;
+}
+
+/**
+ * Format a product measurement without unnecessary trailing zeroes.
+ *
+ * @param mixed $value
+ * @return string
+ */
+function store_format_measurement($value)
+{
+    $formatted = number_format((float) $value, 4, '.', '');
+    return rtrim(rtrim($formatted, '0'), '.');
+}
 
 function store_escape($value)
 {

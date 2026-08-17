@@ -127,7 +127,7 @@ $slug = isset($_GET['product']) ? trim((string) $_GET['product']) : '';
 if ($view === 'checkout') {
     $input070 = store_checkout070_input($_SERVER['REQUEST_METHOD'] === 'POST' ? $_POST : array());
     $content = store_render_checkout070($input070, $checkout_error);
-    COM_output(COM_createHTMLDocument($content, array('pagetitle' => $LANG_STORE['checkout'])));
+    COM_output(COM_createHTMLDocument($content, store_document_options($LANG_STORE['checkout'])));
     exit;
 }
 
@@ -315,6 +315,33 @@ if ($view === 'cart') {
         $content .= '<p class="store-product-price">'
             . store_format_price($product['price'], $product['currency']) . '</p>';
 
+        if (store_product_uses_stock($product)) {
+            $weight = isset($product['weight']) ? (float) $product['weight'] : 0;
+            $length = isset($product['length']) ? (float) $product['length'] : 0;
+            $width = isset($product['width']) ? (float) $product['width'] : 0;
+            $height = isset($product['height']) ? (float) $product['height'] : 0;
+            $weightUnit = isset($_STORE_CONF['weight_unit']) ? $_STORE_CONF['weight_unit'] : 'kg';
+            $dimensionUnit = isset($_STORE_CONF['dimension_unit']) ? $_STORE_CONF['dimension_unit'] : 'cm';
+            if ($weight > 0 || $length > 0 || $width > 0 || $height > 0) {
+                $content .= '<div class="store-meta store-product-measurements"><strong>'
+                    . store_escape($LANG_STORE['physical_details']) . '</strong>';
+                if ($weight > 0) {
+                    $content .= '<br>' . store_escape($LANG_STORE['weight']) . ': '
+                        . store_escape(store_format_measurement($weight) . ' ' . $weightUnit);
+                }
+                if ($length > 0 || $width > 0 || $height > 0) {
+                    $dimensions = array(
+                        store_format_measurement($length),
+                        store_format_measurement($width),
+                        store_format_measurement($height)
+                    );
+                    $content .= '<br>' . store_escape($LANG_STORE['dimensions']) . ': '
+                        . store_escape(implode(' × ', $dimensions) . ' ' . $dimensionUnit);
+                }
+                $content .= '</div>';
+            }
+        }
+
         if (!empty($_STORE_CONF['show_stock']) && store_product_uses_stock($product)) {
             if ((int) $product['stock'] > 0) {
                 $content .= '<p><span class="store-stock-badge store-stock-in">'
@@ -423,4 +450,4 @@ if ($view === 'cart') {
     }
 }
 
-COM_output(COM_createHTMLDocument($content, array('pagetitle' => $LANG_STORE['catalog_title'])));
+COM_output(COM_createHTMLDocument($content, store_document_options($LANG_STORE['catalog_title'])));

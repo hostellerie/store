@@ -56,7 +56,7 @@ function store_public_order070_route()
     $order = store_get_order($orderId);
     if (!$order || !store_user_order_access($order)) {
         $content = COM_showMessageText($LANG_STORE['product_not_found'], $LANG_STORE['order']);
-        COM_output(COM_createHTMLDocument($content, array('pagetitle' => $LANG_STORE['order'])));
+        COM_output(COM_createHTMLDocument($content, store_document_options($LANG_STORE['order'])));
         exit;
     }
 
@@ -157,7 +157,7 @@ function store_public_order070_route()
     }
     $content .= '</aside></div>';
 
-    COM_output(COM_createHTMLDocument($content, array('pagetitle' => $LANG_STORE['order'])));
+    COM_output(COM_createHTMLDocument($content, store_document_options($LANG_STORE['order'])));
     exit;
 }
 

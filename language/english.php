@@ -32,17 +32,45 @@ $LANG_configsections['store'] = array('label' => 'Store', 'title' => 'Store Plug
 $LANG_confignames['store'] = array(
     'hide_menu' => 'Hide Store from the main menu',
     'currency' => 'Default currency (ISO 4217 code)',
+    'currency_decimals' => 'Number of decimal places for monetary amounts',
     'products_per_page' => 'Products per page',
     'show_stock' => 'Display stock on public pages',
     'manual_payment_enabled' => 'Enable manual / bank-transfer payment',
     'manual_payment_label' => 'Manual payment method label',
     'manual_payment_instructions' => 'Manual payment instructions shown after checkout',
+    'tax_enabled' => 'Enable tax calculation',
+    'prices_include_tax' => 'Catalogue prices include tax',
+    'tax_basis' => 'Tax calculation basis',
+    'tax_rounding' => 'Tax rounding method',
+    'shipping_enabled' => 'Enable shipping methods',
+    'default_country_code' => 'Default country code (ISO 3166-1 alpha-2)',
+    'weight_unit' => 'Weight unit',
+    'dimension_unit' => 'Dimension unit',
+    'layout_blocks' => 'Geeklog columns displayed on Store pages'
 );
-$LANG_configsubgroups['store'] = array('sg_main' => 'Main Settings');
-$LANG_fs['store'] = array('fs_main' => 'Store Settings');
-$LANG_tab['store'] = array('tab_main' => 'Main Settings');
+$LANG_configsubgroups['store'] = array('sg_main' => 'Store Settings');
+$LANG_fs['store'] = array(
+    'fs_main' => 'General settings',
+    'fs_catalog' => 'Catalogue',
+    'fs_checkout' => 'Checkout and payment',
+    'fs_commerce' => 'Tax and shipping',
+    'fs_display' => 'Public display'
+);
+$LANG_tab['store'] = array(
+    'tab_main' => 'General',
+    'tab_catalog' => 'Catalogue',
+    'tab_checkout' => 'Checkout and payment',
+    'tab_commerce' => 'Tax and shipping',
+    'tab_display' => 'Display'
+);
 $LANG_configselects['store'] = array(
-    0 => array('Yes' => 1, 'No' => 0)
+    0 => array('Yes' => 1, 'No' => 0),
+    1 => array(
+        'No columns (full width)' => 'none',
+        'Left column only' => 'left',
+        'Right column only' => 'right',
+        'Left and right columns' => 'both'
+    )
 );
 
 $LANG_STORE = array(
@@ -53,6 +81,9 @@ $LANG_STORE = array(
     'product_not_found' => 'Product not found.',
     'price' => 'Price',
     'stock' => 'Stock',
+    'weight' => 'Weight',
+    'dimensions' => 'Dimensions',
+    'physical_details' => 'Physical details',
     'stock_physical_only' => 'Stock applies to physical products only. Digital products are not stock-limited.',
     'in_stock' => 'in stock',
     'out_of_stock' => 'Out of stock',

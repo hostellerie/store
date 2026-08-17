@@ -36,11 +36,19 @@ function plugin_autoinstall_store($pi_name)
         ),
         'features' => array(
             'store.admin' => 'Full access to Store administration',
-            'config.store.tab_main' => 'Access to Store configuration'
+            'config.store.tab_main' => 'Access to Store configuration',
+            'config.store.tab_catalog' => 'Access to Store catalogue configuration',
+            'config.store.tab_checkout' => 'Access to Store checkout configuration',
+            'config.store.tab_commerce' => 'Access to Store tax and shipping configuration',
+            'config.store.tab_display' => 'Access to Store display configuration'
         ),
         'mappings' => array(
             'store.admin' => array($pi_admin),
-            'config.store.tab_main' => array($pi_admin)
+            'config.store.tab_main' => array($pi_admin),
+            'config.store.tab_catalog' => array($pi_admin),
+            'config.store.tab_checkout' => array($pi_admin),
+            'config.store.tab_commerce' => array($pi_admin),
+            'config.store.tab_display' => array($pi_admin)
         ),
         'tables' => array(
             'store_products',
