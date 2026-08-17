@@ -19,6 +19,7 @@ $LANG_STORE_CHECKOUT070 = array(
     'shipping_method' => 'Mode de livraison',
     'shipping' => 'Livraison',
     'no_shipping' => 'Aucun mode de livraison n’est disponible pour cette destination.',
+    'update_quote' => 'Mettre à jour livraison et taxes',
     'subtotal' => 'Sous-total',
     'taxes' => 'Taxes',
     'tax_included' => 'Les prix produits configurés incluent les taxes.',
