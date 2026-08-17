@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# One-time metadata normalization helper for the 0.7.0 alpha branch.
 changed = []
 for path in list(Path('.').rglob('*.php')) + [Path('functions.inc')]:
     if not path.is_file():
