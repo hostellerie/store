@@ -77,5 +77,6 @@ require_once __DIR__ . '/includes/routes-commerce.php';
 require_once __DIR__ . '/includes/routes-product-commerce.php';
 require_once __DIR__ . '/includes/routes-core.php';
 require_once __DIR__ . '/includes/routes-pos070.php';
+require_once __DIR__ . '/includes/routes-orders070.php';
 require_once __DIR__ . '/includes/routes-pos.php';
 require_once __DIR__ . '/includes/routes-orders.php';
