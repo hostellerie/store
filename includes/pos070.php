@@ -152,7 +152,7 @@ function store_create_pos_order070($requestedItems, $paymentMethod, $customer = 
         if (store_product_uses_stock($product)) {
             DB_query("UPDATE {$_TABLES['store_products']} SET stock=stock-$quantity,modified=NOW() "
                 . "WHERE id=$productId AND stock >= $quantity", 1);
-            if (DB_error() || DB_affectedRows() < 1) {
+            if (DB_error()) {
                 return array('success' => false, 'error' => 'stock');
             }
         }
