@@ -121,3 +121,7 @@ function store_checkout070_quote_with_shipping($input, $shippingMethodId)
     $input['shipping_method_id'] = (int) $shippingMethodId;
     return store_checkout070_quote($input);
 }
+
+// The public Store index loads this helper for every Store request. Routing the
+// 0.7.0 order view here lets it intercept order details before the legacy view.
+require_once $_CONF['path'] . 'plugins/store/includes/public-order070.php';
