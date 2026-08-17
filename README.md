@@ -4,7 +4,7 @@ Geeklog Store is a modular e-commerce plugin for the Geeklog CMS.
 
 It is designed to provide a modern commerce foundation for Geeklog without tying the plugin to a single payment provider or a single country.
 
-Store currently includes a product catalog, shopping cart, order management, stock handling, payment records and a Point of Sale interface for in-person sales.
+Store 0.6.5 is the current stabilization / documentation baseline. It includes a product catalog, shopping cart, order management, stock handling, payment records and a Point of Sale interface for in-person sales.
 
 The project is designed to evolve toward a complete commerce platform supporting online sales, physical sales, digital products, QR-based commerce, advanced shipping and tax rules, sales pages, suppliers and marketplace features.
 
@@ -24,12 +24,7 @@ Current features include:
 - Payment records
 - Manual payment / bank transfer
 - Point of Sale (POS)
-- POS payment methods:
-  - Cash
-  - Card
-  - Cheque
-  - Bank transfer
-  - Other
+- POS payment methods: cash, card, cheque, bank transfer and other
 - Printable POS receipts
 - Shared stock between online sales and POS
 - Product administration
@@ -41,70 +36,31 @@ Current features include:
 
 ## Philosophy
 
-Geeklog Store follows several important principles.
-
 ### International by design
 
-Geeklog is used internationally, so Store must not assume:
-
-- a specific country
-- the euro
-- French VAT rules
-- a specific tax model
-- a specific shipping carrier
-- a specific address format
-
-Future tax, shipping, currency and marketplace features will therefore be implemented through configurable and extensible systems.
+Geeklog is used internationally, so Store must not assume a specific country, currency, tax model, shipping carrier or address format. Future tax, shipping, currency and marketplace features will therefore be implemented through configurable and extensible systems.
 
 ### Payment-provider independent
 
 PayPal, Stripe and other payment services are intended to be payment drivers, not the core of Store.
 
-The Store core remains responsible for:
-
-- products
-- prices
-- taxes
-- shipping
-- discounts
-- orders
-- stock
-- customers
-- refunds
-- accounting records
-
-Payment providers only handle payment-related operations.
+The Store core remains responsible for products, prices, taxes, shipping, discounts, orders, stock, customers, refunds and commercial records. Payment providers handle payment-related operations only.
 
 ### One commerce engine
 
-Online checkout, POS, payment links and future sales channels should all use the same:
+Online checkout, POS, payment links and future sales channels should all use the same products, stock, orders, payments, tax calculations, shipping calculations and total calculation engine.
 
-- products
-- stock
-- orders
-- payments
-- tax calculations
-- shipping calculations
-- total calculation engine
+### Single-store simple, marketplace ready
 
-This avoids duplicated business logic.
+Store is currently a single-store system. Future marketplace functions must remain optional so a normal Geeklog site does not inherit unnecessary multi-vendor complexity.
 
 ## Point of Sale
 
-Store includes an administrator-only Point of Sale interface suitable for:
+Store includes an administrator-only Point of Sale interface suitable for shops, markets, trade shows, associations, events and temporary stands.
 
-- shops
-- markets
-- trade shows
-- associations
-- events
-- temporary stands
+Products can be added quickly to a sale and paid using cash, card, cheque, bank transfer or another manually recorded method. POS sales use the same stock, order and payment records as online sales.
 
-Products can be added quickly to a sale and paid using cash, card, cheque, bank transfer or another manually recorded method.
-
-POS sales use the same stock and order tables as online sales.
-
-## Planned development
+## Roadmap
 
 The roadmap includes, among other features:
 
@@ -114,82 +70,51 @@ The roadmap includes, among other features:
 - QR codes for products, carts, receipts and tickets
 - Customer-to-POS QR cart transfer
 - Sales page builder
+- Product FAQs and customer reviews
 - Bundles and product variants
 - Payment links
-- PayPal
-- Stripe
+- PayPal and Stripe drivers
 - Secure digital downloads
 - Paid access to Geeklog groups and content
-- Gift cards
-- Loyalty program
-- Invoices and credit notes
-- Quotes
+- Gift cards and loyalty
+- Invoices, credit notes and quotes
 - Returns and RMA management
-- Product reviews
-- Product FAQs
-- Suppliers
-- Purchase orders
+- Suppliers and purchase orders
 - Automatic restocking suggestions
 - Cash register sessions
 - Commercial analytics
 - Ticketing
 - Barcode and QR product scanning
 - Marketplace mode
-- Multi-vendor catalogs
-- Vendor stores
+- Multi-vendor catalogs and vendor stores
 - Platform commissions
 - Vendor balances and payouts
+- Public Store pages capable of using full-width Geeklog layouts
 
 The detailed roadmap is available in:
 
 ```text
 docs/ROADMAP.md
-````
+```
 
 It can also be viewed directly from the Store administration interface.
 
 ## Marketplace direction
 
-Store is currently a single-store system, but its architecture is intended to evolve toward optional marketplace capabilities.
-
-Future marketplace features may include:
-
-* multiple sellers
-* seller-specific storefronts
-* products in a shared catalog
-* vendor-specific administration
-* platform commissions
-* multi-vendor orders
-* seller balances
-* payouts
-* vendor reporting
-
-Single-store installations should remain simple and should not be forced to use marketplace functionality.
+Future marketplace features may include multiple sellers, seller-specific storefronts, products in a shared catalog, vendor-specific administration, platform commissions, multi-vendor orders, seller balances, payouts and vendor reporting.
 
 ## Suppliers and inventory
 
-Store also plans to distinguish sellers from suppliers.
-
-Future supplier management may include:
-
-* supplier references
-* purchase prices
-* preferred suppliers
-* reorder thresholds
-* target stock levels
-* purchase orders
-* partial deliveries
-* stock replenishment
-* supplier price history
+Store distinguishes marketplace sellers from inventory suppliers. Planned supplier management includes supplier references, purchase prices, preferred suppliers, reorder thresholds, target stock levels, purchase orders, partial deliveries, stock replenishment and supplier price history.
 
 ## Requirements
 
 Store is intended to support:
 
-* Geeklog 2.1.1 and later
-* PHP 5.6 and later where technically possible
+- Geeklog 2.1.1 and later
+- PHP 5.6 and later where technically possible
 
-Development and testing currently focus on modern Geeklog installations while maintaining backward compatibility as long as it remains reasonable.
+Development and testing focus on modern Geeklog installations while maintaining backward compatibility as long as it remains technically reasonable.
 
 ## Installation
 
@@ -201,14 +126,14 @@ Install Store like a standard Geeklog plugin:
 4. Configure the plugin from the Geeklog Configuration interface.
 5. Open the Store administration page to create products.
 
-## Status
+## Development status
 
-Store is currently under active development.
+Store 0.6.5 is a pre-release stabilization snapshot before the 0.7.0 international tax, shipping and unified order-total work.
 
-The current releases should be considered development / testing versions until the project reaches a stable 1.0 release.
+See `docs/STATUS-0.6.5.md` for the regression baseline and `CHANGELOG.md` for release history.
 
-Testing, bug reports and feedback are welcome.
+The project should be considered development / testing software until the 1.0 release.
 
 ## License
 
-See the license information included with the project.
+Store is distributed under the GNU General Public License version 2 or, at your option, any later version. See `LICENSE` for details.
