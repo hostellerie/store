@@ -1,0 +1,46 @@
+name: Apply Store 0.7.0 compound tax
+
+on:
+  push:
+    branches:
+      - feature/0.7.0-taxes-shipping-totals
+    paths:
+      - tools/apply-070-compound-tax.py
+      - .github/workflows/apply-070-compound-tax.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/0.7.0-taxes-shipping-totals
+
+      - name: Apply compound-tax patch
+        run: python3 tools/apply-070-compound-tax.py
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Lint commerce engine
+        run: php -l includes/commerce.php
+
+      - name: Commit commerce calculation update
+        shell: bash
+        run: |
+          if git diff --quiet -- includes/commerce.php; then
+              echo 'No commerce.php changes required.'
+              exit 0
+          fi
+          git config user.name 'hostellerie'
+          git config user.email 'hostellerie.org@gmail.com'
+          git add includes/commerce.php
+          git commit -m 'Support compound tax rates in Store 0.7.0 [skip ci]'
+          git push origin HEAD:feature/0.7.0-taxes-shipping-totals
