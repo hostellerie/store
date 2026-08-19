@@ -6,7 +6,7 @@
 // +---------------------------------------------------------------------------+
 // | commerce/english.php                                                     |
 // |                                                                           |
-// | English strings for international tax and shipping administration.        |
+// | English strings for international tax and shipping administration.       |
 // +---------------------------------------------------------------------------+
 
 $LANG_STORE_COMMERCE = array(
@@ -59,6 +59,7 @@ $LANG_STORE_COMMERCE = array(
     'add_shipping_method' => 'Add shipping method',
     'add_location' => 'Add location',
     'saved' => 'The commerce setting has been saved.',
+    'save_failed' => 'The commerce setting could not be saved.',
     'deleted' => 'The commerce setting has been deleted.',
     'invalid_country_code' => 'Enter a valid two-letter country code.',
     'required_fields' => 'Complete the required fields.',
@@ -77,6 +78,7 @@ $LANG_STORE_COMMERCE = array(
     'width' => 'Width',
     'height' => 'Height',
     'physical_shipping_help' => 'Weight and dimensions apply to physical products. The configured Store units are used.',
+    'digital_no_shipping' => 'Digital products do not use weight or dimensions. Any previous logistics values are cleared when this page is saved.',
     'no_tax_class' => 'No tax class',
     'neutral_tax_notice' => 'Store does not install national tax percentages. Configure only the rates that apply to your business.',
     'neutral_shipping_notice' => 'Store does not assume a carrier or country. Add shipping zones and methods according to your own operation.'
