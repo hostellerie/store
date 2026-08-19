@@ -2,11 +2,11 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Store Plugin 0.7.0                                                       |
+// | Store Plugin 0.7.1                                                       |
 // +---------------------------------------------------------------------------+
 // | routes-orders070.php                                                     |
 // |                                                                           |
-// | 0.7.0 order detail and POS receipt views with commercial snapshots.       |
+// | 0.7 order detail and POS receipt views with commercial snapshots.         |
 // +---------------------------------------------------------------------------+
 // | Copyright (C) 2026 by Geeklog Store contributors                         |
 // +---------------------------------------------------------------------------+
@@ -20,6 +20,9 @@ if (!isset($action)) {
 /**
  * Render normalized order totals from persisted snapshots.
  *
+ * tax_total already includes shipping_tax, so shipping tax must not be
+ * displayed as an additional total line or it would look double-counted.
+ *
  * @param array $order
  * @param array $lang
  * @return string
@@ -32,7 +35,6 @@ function store_admin_order_totals070($order, $lang)
     $itemsSubtotal = isset($order['items_subtotal']) ? $order['items_subtotal'] : $order['total'];
     $discountTotal = isset($order['discount_total']) ? $order['discount_total'] : 0;
     $shippingSubtotal = isset($order['shipping_subtotal']) ? $order['shipping_subtotal'] : 0;
-    $shippingTax = isset($order['shipping_tax']) ? $order['shipping_tax'] : 0;
     $taxTotal = isset($order['tax_total']) ? $order['tax_total'] : 0;
 
     $html .= '<tr><th colspan="3">' . store_escape($lang['subtotal']) . '</th><th>'
@@ -47,11 +49,6 @@ function store_admin_order_totals070($order, $lang)
         $shippingLabel = !empty($order['shipping_label']) ? $order['shipping_label'] : $lang['shipping'];
         $html .= '<tr><th colspan="3">' . store_escape($shippingLabel) . '</th><th>'
             . store_format_price($shippingSubtotal, $currency) . '</th></tr>';
-    }
-
-    if (store_money_to_minor($shippingTax) !== 0) {
-        $html .= '<tr><th colspan="3">' . store_escape($lang['shipping_tax']) . '</th><th>'
-            . store_format_price($shippingTax, $currency) . '</th></tr>';
     }
 
     if (store_money_to_minor($taxTotal) !== 0) {
