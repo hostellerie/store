@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Store Plugin 0.7.0                                                       |
+// | Store Plugin 0.7.1                                                       |
 // +---------------------------------------------------------------------------+
 // | autoinstall.php                                                          |
 // |                                                                           |
@@ -27,9 +27,9 @@ function plugin_autoinstall_store($pi_name)
         'info' => array(
             'pi_name'         => $pi_name,
             'pi_display_name' => $pi_display_name,
-            'pi_version'      => '0.7.0',
+            'pi_version'      => '0.7.1',
             'pi_gl_version'   => '2.1.1',
-            'pi_homepage'     => 'https://github.com/Geeklog-Plugins/store'
+            'pi_homepage'     => 'https://github.com/hostellerie/store'
         ),
         'groups' => array(
             $pi_admin => 'Users in this group can administer the Store plugin'
