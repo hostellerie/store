@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Store Plugin 0.7.0                                                       |
+// | Store Plugin 0.7.1                                                       |
 // +---------------------------------------------------------------------------+
 // | functions.inc                                                            |
 // |                                                                          |
@@ -98,9 +98,8 @@ if (!is_array($_STORE_CONF) || !isset($_STORE_CONF['layout_blocks'])) {
     $_STORE_CONF = $store_config->get_config('store');
 }
 
-// Store 0.7.0 centralizes monetary, tax and shipping calculations here.
+// Store 0.7 centralizes monetary, tax and shipping calculations here.
 require_once $store_plugin_path . 'includes/commerce.php';
-
 
 /**
  * Build Geeklog document options for public Store pages.
@@ -162,7 +161,6 @@ function store_slugify($value)
     return trim($value, '-');
 }
 
-
 /**
  * Return true when inventory applies to a product.
  *
@@ -176,8 +174,6 @@ function store_product_uses_stock($product)
 {
     return !isset($product['product_type']) || $product['product_type'] !== 'digital';
 }
-
-
 
 /**
  * Return whether Geeklog's bundled File Manager is available.
@@ -224,7 +220,6 @@ function store_valid_image_url($value)
     $scheme = strtolower($parts['scheme']);
     return ($scheme === 'http' || $scheme === 'https') ? $value : '';
 }
-
 
 function store_product_url($product)
 {
@@ -677,7 +672,6 @@ function store_create_order($customer, $payment_method = 'manual')
     return array('success' => true, 'order_id' => $order_id, 'order_number' => $order_number);
 }
 
-
 /**
  * Return payment methods intended for point-of-sale orders.
  *
@@ -1035,12 +1029,12 @@ function plugin_getheadercode_store()
 
 function plugin_getversion_store()
 {
-    return '0.7.0';
+    return '0.7.1';
 }
 
 function plugin_chkVersion_store()
 {
-    return '0.7.0';
+    return '0.7.1';
 }
 
 function plugin_upgrade_store()
@@ -1198,9 +1192,17 @@ function plugin_upgrade_store()
         }
     }
 
-    DB_query("UPDATE {$_TABLES['plugins']} SET pi_version = '0.7.0', pi_gl_version = '2.1.1' WHERE pi_name = 'store'", 1);
+    if (version_compare($installed, '0.7.1', '<')) {
+        require_once $_CONF['path'] . 'plugins/store/includes/upgrade071.php';
+        if (!store_upgrade_to_071()) {
+            COM_errorLog('Store Plugin: failed to migrate database to 0.7.1.');
+            return false;
+        }
+    }
+
+    DB_query("UPDATE {$_TABLES['plugins']} SET pi_version = '0.7.1', pi_gl_version = '2.1.1' WHERE pi_name = 'store'", 1);
     if (DB_error()) {
-        COM_errorLog('Store Plugin: failed to update plugin metadata to 0.7.0.');
+        COM_errorLog('Store Plugin: failed to update plugin metadata to 0.7.1.');
         return false;
     }
     return true;
@@ -1227,7 +1229,11 @@ function plugin_autouninstall_store()
         'groups' => array('Store Admin'),
         'features' => array(
             'store.admin',
-            'config.store.tab_main'
+            'config.store.tab_main',
+            'config.store.tab_catalog',
+            'config.store.tab_checkout',
+            'config.store.tab_commerce',
+            'config.store.tab_display'
         ),
         'php_blocks' => array(),
         'vars' => array()
