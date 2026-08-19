@@ -1,0 +1,169 @@
+name: Integrate Store product commerce editor
+
+on:
+  push:
+    branches:
+      - feature/0.7.0-taxes-shipping-totals
+    paths:
+      - .github/workflows/integrate-product-commerce-editor.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/0.7.0-taxes-shipping-totals
+
+      - name: Integrate tax and logistics fields
+        shell: python
+        run: |
+          from pathlib import Path
+
+          editor = Path('admin/includes/editor.php')
+          text = editor.read_text()
+
+          marker = "    $html .= '</div>';\n\n    $html .= '<section class=\"store-admin-panel store-primary-image-panel\">';"
+          block = '''    $html .= '</div>';
+
+    $weightUnit = isset($_STORE_CONF['weight_unit']) ? $_STORE_CONF['weight_unit'] : 'kg';
+    $dimensionUnit = isset($_STORE_CONF['dimension_unit']) ? $_STORE_CONF['dimension_unit'] : 'cm';
+    $html .= '<section class="store-admin-panel store-product-commerce-panel">';
+    $html .= '<h2>' . store_escape($LANG_STORE_COMMERCE['product_tax_shipping']) . '</h2>';
+    $html .= '<p class="store-meta">' . store_escape($LANG_STORE_COMMERCE['physical_shipping_help']) . '</p>';
+    $html .= '<label>' . store_escape($LANG_STORE_COMMERCE['tax_class']) . '</label>'
+        . store_commerce_tax_class_select(isset($product['tax_class_id']) ? $product['tax_class_id'] : 0, 'tax_class_id');
+    $html .= '<div id="store-product-logistics-fields">';
+    $html .= '<div class="store-product-commerce-grid">';
+    $html .= '<div><label>' . store_escape($LANG_STORE_COMMERCE['weight']) . ' (' . store_escape($weightUnit) . ')</label>'
+        . '<input type="number" min="0" step="0.0001" name="weight" value="'
+        . store_escape(isset($product['weight']) ? $product['weight'] : '0.0000') . '"></div>';
+    $html .= '<div><label>' . store_escape($LANG_STORE_COMMERCE['length']) . ' (' . store_escape($dimensionUnit) . ')</label>'
+        . '<input type="number" min="0" step="0.0001" name="length" value="'
+        . store_escape(isset($product['length']) ? $product['length'] : '0.0000') . '"></div>';
+    $html .= '<div><label>' . store_escape($LANG_STORE_COMMERCE['width']) . ' (' . store_escape($dimensionUnit) . ')</label>'
+        . '<input type="number" min="0" step="0.0001" name="width" value="'
+        . store_escape(isset($product['width']) ? $product['width'] : '0.0000') . '"></div>';
+    $html .= '<div><label>' . store_escape($LANG_STORE_COMMERCE['height']) . ' (' . store_escape($dimensionUnit) . ')</label>'
+        . '<input type="number" min="0" step="0.0001" name="height" value="'
+        . store_escape(isset($product['height']) ? $product['height'] : '0.0000') . '"></div>';
+    $html .= '</div></div>';
+    if ($id > 0) {
+        $html .= '<p class="store-meta"><a href="index.php?action=product_commerce&id=' . $id . '">'
+            . store_escape($LANG_STORE_COMMERCE['commerce']) . '</a></p>';
+    }
+    $html .= '</section>';
+
+    $html .= '<section class="store-admin-panel store-primary-image-panel">';'''
+          if marker not in text:
+              raise SystemExit('Editor insertion point not found')
+          text = text.replace(marker, block, 1)
+
+          oldjs = '''        . 'var typeField=document.getElementById("store-product-type");'
+        . 'var stockRow=document.getElementById("store-stock-row");' '''
+          newjs = '''        . 'var typeField=document.getElementById("store-product-type");'
+        . 'var stockRow=document.getElementById("store-stock-row");'
+        . 'var logisticsFields=document.getElementById("store-product-logistics-fields");' '''
+          if oldjs not in text:
+              raise SystemExit('Editor JS variables point not found')
+          text = text.replace(oldjs, newjs, 1)
+
+          oldfunc = '''        . 'function updateStock(){if(!typeField||!stockRow){return;}stockRow.style.display=typeField.value==="digital"?"none":"block";}' '''
+          newfunc = '''        . 'function updateStock(){if(!typeField){return;}var digital=typeField.value==="digital";if(stockRow){stockRow.style.display=digital?"none":"block";}if(logisticsFields){logisticsFields.style.display=digital?"none":"block";}}' '''
+          if oldfunc not in text:
+              raise SystemExit('Editor JS updateStock point not found')
+          text = text.replace(oldfunc, newfunc, 1)
+          editor.write_text(text)
+
+          routes = Path('admin/includes/routes-core.php')
+          text = routes.read_text()
+          marker = '''        $stock = max(0, isset($_POST['stock']) ? (int) $_POST['stock'] : 0);
+        $type = (isset($_POST['product_type']) && $_POST['product_type'] === 'digital')
+            ? 'digital'
+            : 'physical';
+        $active = isset($_POST['active']) ? 1 : 0;
+'''
+          replacement = '''        $stock = max(0, isset($_POST['stock']) ? (int) $_POST['stock'] : 0);
+        $type = (isset($_POST['product_type']) && $_POST['product_type'] === 'digital')
+            ? 'digital'
+            : 'physical';
+        $taxClassId = isset($_POST['tax_class_id']) ? max(0, (int) $_POST['tax_class_id']) : 0;
+        if ($taxClassId > 0) {
+            $validTaxClass = DB_getItem($_TABLES['store_tax_classes'], 'id', 'id = ' . $taxClassId . ' AND active = 1');
+            if ((int) $validTaxClass !== $taxClassId) {
+                $taxClassId = 0;
+            }
+        }
+        $weight = number_format(max(0, isset($_POST['weight']) ? (float) $_POST['weight'] : 0), 4, '.', '');
+        $length = number_format(max(0, isset($_POST['length']) ? (float) $_POST['length'] : 0), 4, '.', '');
+        $width = number_format(max(0, isset($_POST['width']) ? (float) $_POST['width'] : 0), 4, '.', '');
+        $height = number_format(max(0, isset($_POST['height']) ? (float) $_POST['height'] : 0), 4, '.', '');
+        if ($type === 'digital') {
+            $weight = $length = $width = $height = '0.0000';
+        }
+        $active = isset($_POST['active']) ? 1 : 0;
+'''
+          if marker not in text:
+              raise SystemExit('Save parsing point not found')
+          text = text.replace(marker, replacement, 1)
+
+          old_update = '''                        . "description='$descriptionDb',image_url='$imageDb',price='$priceDb',"
+                        . "currency='$currencyDb',stock=$stock,product_type='$typeDb',active=$active,"
+                        . "modified=NOW() WHERE id=$id");'''
+          new_update = '''                        . "description='$descriptionDb',image_url='$imageDb',price='$priceDb',"
+                        . "currency='$currencyDb',stock=$stock,product_type='$typeDb',active=$active,"
+                        . "tax_class_id=$taxClassId,weight='$weight',length='$length',width='$width',height='$height',"
+                        . "modified=NOW() WHERE id=$id");'''
+          if old_update not in text:
+              raise SystemExit('Product UPDATE point not found')
+          text = text.replace(old_update, new_update, 1)
+
+          old_insert = '''                        . "(category_id,sku,slug,name,short_description,description,image_url,price,"
+                        . "currency,stock,product_type,active,created,modified) VALUES "
+                        . "($categoryId,'$skuDb','$slugDb','$nameDb','$shortDb','$descriptionDb',"
+                        . "'$imageDb','$priceDb','$currencyDb',$stock,'$typeDb',$active,NOW(),NOW())");'''
+          new_insert = '''                        . "(category_id,sku,slug,name,short_description,description,image_url,price,"
+                        . "currency,stock,product_type,active,tax_class_id,weight,length,width,height,created,modified) VALUES "
+                        . "($categoryId,'$skuDb','$slugDb','$nameDb','$shortDb','$descriptionDb',"
+                        . "'$imageDb','$priceDb','$currencyDb',$stock,'$typeDb',$active,$taxClassId,'$weight','$length','$width','$height',NOW(),NOW())");'''
+          if old_insert not in text:
+              raise SystemExit('Product INSERT point not found')
+          text = text.replace(old_insert, new_insert, 1)
+          routes.write_text(text)
+
+      - name: Add editor layout CSS
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('functions.inc')
+          text = path.read_text()
+          if '.store-product-commerce-grid{' not in text:
+              needle = ".store-form textarea{min-height:100px}"
+              replacement = needle + ".store-product-commerce-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.store-product-commerce-grid label{margin-top:0}.store-product-commerce-panel{margin-top:18px}"
+              if needle not in text:
+                  raise SystemExit('CSS insertion point not found')
+              text = text.replace(needle, replacement, 1)
+              path.write_text(text)
+
+      - name: Set up PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+
+      - name: Lint updated files
+        run: |
+          php -l admin/includes/editor.php
+          php -l admin/includes/routes-core.php
+          php -l functions.inc
+
+      - name: Commit changes
+        run: |
+          git config user.name hostellerie
+          git config user.email hostellerie.org@gmail.com
+          git add admin/includes/editor.php admin/includes/routes-core.php functions.inc
+          git commit -m "Integrate tax and shipping fields into product editor" || exit 0
+          git push
