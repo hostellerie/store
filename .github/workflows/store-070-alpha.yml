@@ -1,128 +1,19 @@
-name: Store 0.7.0 alpha checks
+name: Store 0.7.1 checks
 
 on:
   push:
     branches:
-      - feature/0.7.0-taxes-shipping-totals
+      - feature/0.7.1-hardening
   pull_request:
     branches:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  apply-feedback:
-    name: Apply pending product page refinement
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: feature/0.7.0-taxes-shipping-totals
-
-      - name: Move physical details below description
-        shell: python
-        run: |
-          from pathlib import Path
-
-          path = Path('public_html/index.php')
-          text = path.read_text()
-          old = '''        if (store_product_uses_stock($product)) {
-              $weight = isset($product['weight']) ? (float) $product['weight'] : 0;
-              $length = isset($product['length']) ? (float) $product['length'] : 0;
-              $width = isset($product['width']) ? (float) $product['width'] : 0;
-              $height = isset($product['height']) ? (float) $product['height'] : 0;
-              $weightUnit = isset($_STORE_CONF['weight_unit']) ? $_STORE_CONF['weight_unit'] : 'kg';
-              $dimensionUnit = isset($_STORE_CONF['dimension_unit']) ? $_STORE_CONF['dimension_unit'] : 'cm';
-              if ($weight > 0 || $length > 0 || $width > 0 || $height > 0) {
-                  $content .= '<div class="store-meta store-product-measurements"><strong>'
-                      . store_escape($LANG_STORE['physical_details']) . '</strong>';
-                  if ($weight > 0) {
-                      $content .= '<br>' . store_escape($LANG_STORE['weight']) . ': '
-                          . store_escape(store_format_measurement($weight) . ' ' . $weightUnit);
-                  }
-                  if ($length > 0 || $width > 0 || $height > 0) {
-                      $dimensions = array(
-                          store_format_measurement($length),
-                          store_format_measurement($width),
-                          store_format_measurement($height)
-                      );
-                      $content .= '<br>' . store_escape($LANG_STORE['dimensions']) . ': '
-                          . store_escape(implode(' × ', $dimensions) . ' ' . $dimensionUnit);
-                  }
-                  $content .= '</div>';
-              }
-          }
-
-'''.replace('              ', '            ').replace('                  ', '                ').replace('                      ', '                    ')
-
-          if old in text:
-              text = text.replace(old, '', 1)
-
-          if 'store-product-technical-list' not in text:
-              anchor = '''        if ($product['description'] !== '') {
-              $content .= '<section class="store-product-description"><h2>'
-                  . store_escape($LANG_STORE['description']) . '</h2><div>'
-                  . nl2br(store_escape($product['description'])) . '</div></section>';
-          }
-
-'''.replace('              ', '            ').replace('                  ', '                ')
-              block = '''        if (store_product_uses_stock($product)) {
-              $weight = isset($product['weight']) ? (float) $product['weight'] : 0;
-              $length = isset($product['length']) ? (float) $product['length'] : 0;
-              $width = isset($product['width']) ? (float) $product['width'] : 0;
-              $height = isset($product['height']) ? (float) $product['height'] : 0;
-              $weightUnit = isset($_STORE_CONF['weight_unit']) ? $_STORE_CONF['weight_unit'] : 'kg';
-              $dimensionUnit = isset($_STORE_CONF['dimension_unit']) ? $_STORE_CONF['dimension_unit'] : 'cm';
-              if ($weight > 0 || $length > 0 || $width > 0 || $height > 0) {
-                  $content .= '<section class="store-product-technical"><h2>'
-                      . store_escape($LANG_STORE['physical_details']) . '</h2><dl class="store-product-technical-list">';
-                  if ($weight > 0) {
-                      $content .= '<dt>' . store_escape($LANG_STORE['weight']) . '</dt><dd>'
-                          . store_escape(store_format_measurement($weight) . ' ' . $weightUnit) . '</dd>';
-                  }
-                  if ($length > 0 || $width > 0 || $height > 0) {
-                      $dimensions = array(
-                          store_format_measurement($length),
-                          store_format_measurement($width),
-                          store_format_measurement($height)
-                      );
-                      $content .= '<dt>' . store_escape($LANG_STORE['dimensions']) . '</dt><dd>'
-                          . store_escape(implode(' × ', $dimensions) . ' ' . $dimensionUnit) . '</dd>';
-                  }
-                  $content .= '</dl></section>';
-              }
-          }
-
-'''.replace('              ', '            ').replace('                  ', '                ').replace('                      ', '                    ').replace('                          ', '                        ')
-              if anchor not in text:
-                  raise SystemExit('Description anchor not found')
-              text = text.replace(anchor, anchor + block, 1)
-
-          path.write_text(text)
-
-      - name: Lint refined product page
-        run: php -l public_html/index.php
-
-      - name: Commit refinement when needed
-        shell: bash
-        run: |
-          if git diff --quiet -- public_html/index.php; then
-              echo 'Physical details already use the technical block.'
-              exit 0
-          fi
-          git config user.name hostellerie
-          git config user.email hostellerie.org@gmail.com
-          git add public_html/index.php
-          git commit -m 'Move physical details below product description [skip ci]'
-          git push
-
   php-lint:
     name: PHP ${{ matrix.php }} checks
-    needs: apply-feedback
-    if: always() && (needs.apply-feedback.result == 'success' || needs.apply-feedback.result == 'skipped')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -134,8 +25,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: feature/0.7.0-taxes-shipping-totals
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -154,6 +43,14 @@ jobs:
       - name: Run commerce calculator regression tests
         run: php tests/commerce070_test.php
 
+      - name: Verify 0.7.1 version metadata
+        shell: bash
+        run: |
+          grep -q '<pi_version>0.7.1</pi_version>' plugin.xml
+          grep -q "'pi_version'.*'0.7.1'" autoinstall.php
+          grep -q "return '0.7.1';" functions.inc
+          grep -q 'upgrade071.php' functions.inc
+
       - name: Reject tab indentation
         shell: bash
         run: |
@@ -163,14 +60,12 @@ jobs:
           fi
 
   build-package:
-    name: Build installable alpha ZIP
+    name: Build installable Store 0.7.1 ZIP
     runs-on: ubuntu-latest
     needs: php-lint
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: feature/0.7.0-taxes-shipping-totals
 
       - name: Stage Geeklog plugin archive
         shell: bash
@@ -184,11 +79,11 @@ jobs:
               --exclude='package' \
               ./ package/store/
           cd package
-          zip -r ../store_0.7.0-alpha.zip store
+          zip -r ../store_0.7.1.zip store
 
-      - name: Upload alpha package
+      - name: Upload Store 0.7.1 package
         uses: actions/upload-artifact@v4
         with:
-          name: store-0.7.0-alpha
-          path: store_0.7.0-alpha.zip
+          name: store-0.7.1
+          path: store_0.7.1.zip
           if-no-files-found: error
