@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Store Plugin 0.7.0                                                       |
+// | Store Plugin 0.7.1                                                       |
 // +---------------------------------------------------------------------------+
 // | mysql_install.php                                                        |
 // |                                                                           |
@@ -146,7 +146,8 @@ CREATE TABLE {$_TABLES['store_shipping_methods']} (
   PRIMARY KEY (id),
   KEY store_shipping_method_zone (zone_id),
   KEY store_shipping_method_active (active),
-  KEY store_shipping_method_code (code)
+  KEY store_shipping_method_code (code),
+  KEY store_shipping_method_tax_class (tax_class_id)
 ) ENGINE=MyISAM
 ";
 
@@ -233,6 +234,7 @@ CREATE TABLE {$_TABLES['store_orders']} (
   KEY store_order_user (user_id),
   KEY store_order_status (status),
   KEY store_order_source (order_source),
+  KEY store_order_country (country_code),
   KEY store_order_created (created)
 ) ENGINE=MyISAM
 ";
