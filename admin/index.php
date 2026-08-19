@@ -57,9 +57,11 @@ require_once $commerceLanguageFile;
 
 require_once __DIR__ . '/includes/helpers.php';
 require_once __DIR__ . '/includes/editor.php';
+require_once __DIR__ . '/includes/editor070.php';
 require_once __DIR__ . '/includes/commerce-guards.php';
 require_once __DIR__ . '/includes/routes-commerce.php';
 require_once __DIR__ . '/includes/routes-product-commerce.php';
+require_once __DIR__ . '/includes/routes-editor070.php';
 require_once __DIR__ . '/includes/routes-core.php';
 require_once __DIR__ . '/includes/routes-pos070.php';
 require_once __DIR__ . '/includes/routes-orders070.php';
