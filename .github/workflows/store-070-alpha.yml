@@ -9,11 +9,137 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  finalize-source:
+    name: Finalize 0.7.1 source
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/0.7.1-hardening
+          fetch-depth: 0
+
+      - name: Patch remaining 0.7.1 source markers
+        shell: python
+        run: |
+          from pathlib import Path
+
+          p = Path('functions.inc')
+          s = p.read_text()
+          s = s.replace('Store Plugin 0.7.0', 'Store Plugin 0.7.1', 1)
+          s = s.replace('// Store 0.7.0 centralizes monetary, tax and shipping calculations here.',
+                        '// Store 0.7 centralizes monetary, tax and shipping calculations here.', 1)
+          s = s.replace("function plugin_getversion_store()\n{\n    return '0.7.0';\n}\n\nfunction plugin_chkVersion_store()\n{\n    return '0.7.0';",
+                        "function plugin_getversion_store()\n{\n    return '0.7.1';\n}\n\nfunction plugin_chkVersion_store()\n{\n    return '0.7.1';", 1)
+
+          old = """    if (version_compare($installed, '0.7.0', '<')) {
+        require_once $_CONF['path'] . 'plugins/store/includes/upgrade070.php';
+        if (!store_upgrade_to_070()) {
+            COM_errorLog('Store Plugin: failed to migrate database to 0.7.0.');
+            return false;
+        }
+    }
+
+    DB_query("UPDATE {$_TABLES['plugins']} SET pi_version = '0.7.0', pi_gl_version = '2.1.1' WHERE pi_name = 'store'", 1);
+    if (DB_error()) {
+        COM_errorLog('Store Plugin: failed to update plugin metadata to 0.7.0.');
+        return false;
+    }"""
+          new = """    if (version_compare($installed, '0.7.0', '<')) {
+        require_once $_CONF['path'] . 'plugins/store/includes/upgrade070.php';
+        if (!store_upgrade_to_070()) {
+            COM_errorLog('Store Plugin: failed to migrate database to 0.7.0.');
+            return false;
+        }
+    }
+
+    if (version_compare($installed, '0.7.1', '<')) {
+        require_once $_CONF['path'] . 'plugins/store/includes/upgrade071.php';
+        if (!store_upgrade_to_071()) {
+            COM_errorLog('Store Plugin: failed to migrate database to 0.7.1.');
+            return false;
+        }
+    }
+
+    DB_query("UPDATE {$_TABLES['plugins']} SET pi_version = '0.7.1', pi_gl_version = '2.1.1' WHERE pi_name = 'store'", 1);
+    if (DB_error()) {
+        COM_errorLog('Store Plugin: failed to update plugin metadata to 0.7.1.');
+        return false;
+    }"""
+          if old in s:
+              s = s.replace(old, new, 1)
+          elif "pi_version = '0.7.1'" not in s:
+              raise SystemExit('Store upgrade block not found')
+
+          old_features = """        'features' => array(
+            'store.admin',
+            'config.store.tab_main'
+        ),"""
+          new_features = """        'features' => array(
+            'store.admin',
+            'config.store.tab_main',
+            'config.store.tab_catalog',
+            'config.store.tab_checkout',
+            'config.store.tab_commerce',
+            'config.store.tab_display'
+        ),"""
+          if old_features in s:
+              s = s.replace(old_features, new_features, 1)
+          p.write_text(s)
+
+          for name in ('language/english.php', 'language/french.php', 'language/french_france.php'):
+              p = Path(name)
+              if not p.exists():
+                  continue
+              s = p.read_text()
+              s = s.replace('Store Plugin 0.7.0', 'Store Plugin 0.7.1', 1)
+              s = s.replace("'version' => 'Version 0.7.0'", "'version' => 'Version 0.7.1'")
+              p.write_text(s)
+
+          # Do not render incomplete dimensions as 30 × 0 × 8.
+          p = Path('public_html/index.php')
+          s = p.read_text()
+          old_dimensions = """            if ($length > 0 || $width > 0 || $height > 0) {
+                $dimensions = array(
+                    store_format_measurement($length),
+                    store_format_measurement($width),
+                    store_format_measurement($height)
+                );"""
+          new_dimensions = """            if ($length > 0 && $width > 0 && $height > 0) {
+                $dimensions = array(
+                    store_format_measurement($length),
+                    store_format_measurement($width),
+                    store_format_measurement($height)
+                );"""
+          if old_dimensions in s:
+              s = s.replace(old_dimensions, new_dimensions, 1)
+          p.write_text(s)
+
+          helper = Path('tools/normalize-070-metadata.py')
+          if helper.exists():
+              helper.unlink()
+          one_shot = Path('.github/workflows/fix-071-functions.yml')
+          if one_shot.exists():
+              one_shot.unlink()
+
+      - name: Commit final source changes
+        shell: bash
+        run: |
+          git config user.name hostellerie
+          git config user.email hostellerie.org@gmail.com
+          git add -A
+          if git diff --cached --quiet; then
+              exit 0
+          fi
+          git commit -m "Complete Store 0.7.1 upgrade wiring"
+          git push origin HEAD:feature/0.7.1-hardening
+
   php-lint:
     name: PHP ${{ matrix.php }} checks
+    needs: finalize-source
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -23,8 +149,10 @@ jobs:
           - '8.3'
 
     steps:
-      - name: Checkout
+      - name: Checkout finalized feature branch
         uses: actions/checkout@v4
+        with:
+          ref: feature/0.7.1-hardening
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -43,13 +171,15 @@ jobs:
       - name: Run commerce calculator regression tests
         run: php tests/commerce070_test.php
 
-      - name: Verify 0.7.1 version metadata
+      - name: Verify 0.7.1 version and upgrade metadata
         shell: bash
         run: |
           grep -q '<pi_version>0.7.1</pi_version>' plugin.xml
           grep -q "'pi_version'.*'0.7.1'" autoinstall.php
           grep -q "return '0.7.1';" functions.inc
           grep -q 'upgrade071.php' functions.inc
+          grep -q "pi_version = '0.7.1'" functions.inc
+          grep -q 'config.store.tab_display' functions.inc
 
       - name: Reject tab indentation
         shell: bash
@@ -64,8 +194,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: php-lint
     steps:
-      - name: Checkout
+      - name: Checkout finalized feature branch
         uses: actions/checkout@v4
+        with:
+          ref: feature/0.7.1-hardening
 
       - name: Stage Geeklog plugin archive
         shell: bash
