@@ -26,7 +26,6 @@ jobs:
               s = s.replace(old, new, count)
               p.write_text(s)
 
-          # Version metadata + canonical repository homepage.
           p = Path('plugin.xml')
           s = p.read_text().replace('<pi_version>0.7.0</pi_version>', '<pi_version>0.7.1</pi_version>')
           s = s.replace('https://github.com/Geeklog-Plugins/store', 'https://github.com/hostellerie/store')
@@ -38,7 +37,6 @@ jobs:
           s = s.replace('https://github.com/Geeklog-Plugins/store', 'https://github.com/hostellerie/store')
           p.write_text(s)
 
-          # Geeklog plugin API version + explicit 0.7.0 -> 0.7.1 migration.
           p = Path('functions.inc')
           s = p.read_text()
           s = s.replace('Store Plugin 0.7.0', 'Store Plugin 0.7.1', 1)
@@ -83,7 +81,6 @@ jobs:
           s = s.replace(old, new, 1)
           p.write_text(s)
 
-          # Avoid visually counting shipping tax twice: tax_total already contains shipping tax.
           p = Path('admin/includes/routes-orders070.php')
           s = p.read_text().replace('Store Plugin 0.7.0', 'Store Plugin 0.7.1', 1)
           block = """    if (store_money_to_minor($shippingTax) !== 0) {
@@ -96,7 +93,6 @@ jobs:
               s = s.replace(block, '', 1)
           p.write_text(s)
 
-          # Fresh-install schema must match the 0.7.1 migration indexes.
           p = Path('sql/mysql_install.php')
           s = p.read_text().replace('Store Plugin 0.7.0', 'Store Plugin 0.7.1', 1)
           if 'KEY store_shipping_method_tax_class (tax_class_id)' not in s:
@@ -107,26 +103,19 @@ jobs:
                             '  KEY store_order_source (order_source),\n  KEY store_order_country (country_code),\n  KEY store_order_created (created)', 1)
           p.write_text(s)
 
-          # Display version in supported language files.
           for name in ('language/english.php', 'language/french.php', 'language/french_france.php'):
               p = Path(name)
               if p.exists():
-                  s = p.read_text().replace("'version' => 'Version 0.7.0'", "'version' => 'Version 0.7.1'")
-                  p.write_text(s)
+                  p.write_text(p.read_text().replace("'version' => 'Version 0.7.0'", "'version' => 'Version 0.7.1'"))
 
-          # Ensure changelog starts with the actual upgrade release.
           p = Path('CHANGELOG.md')
           s = p.read_text()
           if '## 0.7.1' not in s:
               marker = '# Changelog\n\n'
               entry = """## 0.7.1 - 0.7 commerce hardening\n\n- Added an explicit 0.7.0 to 0.7.1 Geeklog upgrade path.\n- Normalized legacy price, order, line-item and payment monetary columns to `DECIMAL(12,4)`.\n- Added country and tax-class lookup indexes used by the tax/shipping engine.\n- Hardened tax/shipping references, duplicate codes, ranges and reference-safe deletes.\n- Integrated tax class, weight and dimensions into the main product editor.\n- Kept digital product logistics at zero.\n- Moved physical product technical details below the full public description.\n- Removed duplicate visual presentation of shipping tax in admin order totals.\n- Corrected Store metadata homepage to the current repository.\n\n### Upgrade\n\nInstallations already running Store 0.7.0 can use the standard Geeklog plugin upgrade action. Historical commercial snapshots are preserved; 0.7.1 does not recalculate past tax or shipping totals.\n\n"""
-              if marker in s:
-                  s = s.replace(marker, marker + entry, 1)
-              else:
-                  s = entry + s
+              s = s.replace(marker, marker + entry, 1) if marker in s else entry + s
               p.write_text(s)
 
-          # Remove one-shot development workflows and helper scripts before packaging.
           temporary = [
               '.github/workflows/apply-070-functions.yml',
               '.github/workflows/apply-070-compound-tax.yml',
@@ -151,11 +140,9 @@ jobs:
                   if p.is_file():
                       p.unlink()
 
-          # Clean real CI workflow: no write permission or patch jobs.
           ci = Path('.github/workflows/store-070-alpha.yml')
           if ci.exists():
-              s = ci.read_text()
-              s = s.replace('permissions:\n  contents: write', 'permissions:\n  contents: read')
+              s = ci.read_text().replace('permissions:\n  contents: write', 'permissions:\n  contents: read')
               ci.write_text(s)
 
       - name: Validate syntax and version markers
