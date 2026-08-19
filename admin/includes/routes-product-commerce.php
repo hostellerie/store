@@ -23,15 +23,41 @@ if ($action === 'save_product_commerce' && $_SERVER['REQUEST_METHOD'] === 'POST'
     }
 
     $productId = isset($_POST['product_id']) ? (int) $_POST['product_id'] : 0;
+    $product = $productId > 0 ? store_get_product($productId) : false;
+    if (!$product) {
+        store_admin_redirect($LANG_STORE['product_not_found']);
+    }
+
     $taxClassId = isset($_POST['tax_class_id']) ? max(0, (int) $_POST['tax_class_id']) : 0;
+    if ($taxClassId > 0) {
+        $validTaxClass = (int) DB_getItem(
+            $_TABLES['store_tax_classes'],
+            'id',
+            'id = ' . $taxClassId . ' AND active = 1'
+        );
+        if ($validTaxClass !== $taxClassId) {
+            $taxClassId = 0;
+        }
+    }
+
     $weight = number_format(max(0, isset($_POST['weight']) ? (float) $_POST['weight'] : 0), 4, '.', '');
     $length = number_format(max(0, isset($_POST['length']) ? (float) $_POST['length'] : 0), 4, '.', '');
     $width = number_format(max(0, isset($_POST['width']) ? (float) $_POST['width'] : 0), 4, '.', '');
     $height = number_format(max(0, isset($_POST['height']) ? (float) $_POST['height'] : 0), 4, '.', '');
 
-    if ($productId > 0) {
-        DB_query("UPDATE {$_TABLES['store_products']} SET tax_class_id=$taxClassId,weight='$weight',length='$length',"
-            . "width='$width',height='$height',modified=NOW() WHERE id=$productId", 1);
+    if (isset($product['product_type']) && $product['product_type'] === 'digital') {
+        $weight = '0.0000';
+        $length = '0.0000';
+        $width = '0.0000';
+        $height = '0.0000';
+    }
+
+    DB_query("UPDATE {$_TABLES['store_products']} SET tax_class_id=$taxClassId,weight='$weight',length='$length',"
+        . "width='$width',height='$height',modified=NOW() WHERE id=$productId", 1);
+    if (DB_error()) {
+        header('Location: ' . $_CONF['site_admin_url'] . '/plugins/store/index.php?action=product_commerce&id=' . $productId
+            . '&notice=' . rawurlencode($LANG_STORE_COMMERCE['save_failed']));
+        exit;
     }
 
     header('Location: ' . $_CONF['site_admin_url'] . '/plugins/store/index.php?action=product_commerce&id=' . $productId
@@ -50,6 +76,7 @@ if ($action === 'product_commerce') {
     $notice = isset($_GET['notice']) ? (string) $_GET['notice'] : '';
     $weightUnit = isset($_STORE_CONF['weight_unit']) ? $_STORE_CONF['weight_unit'] : 'kg';
     $dimensionUnit = isset($_STORE_CONF['dimension_unit']) ? $_STORE_CONF['dimension_unit'] : 'cm';
+    $isDigital = isset($product['product_type']) && $product['product_type'] === 'digital';
 
     $content = '<div class="store-admin-editor">';
     $content .= '<div class="store-admin-editor-head"><div><h1>' . store_escape($product['name']) . '</h1><p class="store-meta">'
@@ -64,20 +91,23 @@ if ($action === 'product_commerce') {
         . '<input type="hidden" name="product_id" value="' . $productId . '">'
         . '<input type="hidden" name="' . CSRF_TOKEN . '" value="' . store_escape(SEC_createToken()) . '">'
         . '<label>' . store_escape($LANG_STORE_COMMERCE['tax_class']) . '</label>'
-        . store_commerce_tax_class_select(isset($product['tax_class_id']) ? $product['tax_class_id'] : 0, 'tax_class_id')
-        . '<div id="store-product-shipping-fields">'
-        . '<label>' . store_escape($LANG_STORE_COMMERCE['weight']) . ' (' . store_escape($weightUnit) . ')</label>'
-        . '<input type="number" min="0" step="0.0001" name="weight" value="' . store_escape(isset($product['weight']) ? $product['weight'] : '0.0000') . '">'
-        . '<p class="store-meta">' . store_escape($LANG_STORE_COMMERCE['physical_shipping_help']) . '</p>'
-        . '<h3>' . store_escape($LANG_STORE_COMMERCE['dimensions']) . ' (' . store_escape($dimensionUnit) . ')</h3>'
-        . '<div class="store-checkout-row"><div><label>' . store_escape($LANG_STORE_COMMERCE['length']) . '</label><input type="number" min="0" step="0.0001" name="length" value="' . store_escape(isset($product['length']) ? $product['length'] : '0.0000') . '"></div>'
-        . '<div><label>' . store_escape($LANG_STORE_COMMERCE['width']) . '</label><input type="number" min="0" step="0.0001" name="width" value="' . store_escape(isset($product['width']) ? $product['width'] : '0.0000') . '"></div></div>'
-        . '<label>' . store_escape($LANG_STORE_COMMERCE['height']) . '</label><input type="number" min="0" step="0.0001" name="height" value="' . store_escape(isset($product['height']) ? $product['height'] : '0.0000') . '">'
-        . '</div><button class="store-primary-button" type="submit">' . store_escape($LANG_STORE['save']) . '</button></form></section></div>';
+        . store_commerce_tax_class_select(isset($product['tax_class_id']) ? $product['tax_class_id'] : 0, 'tax_class_id');
 
-    if (isset($product['product_type']) && $product['product_type'] === 'digital') {
-        $content .= '<script>(function(){var el=document.getElementById("store-product-shipping-fields");if(el){el.style.opacity="0.55";}})();</script>';
+    if ($isDigital) {
+        $content .= '<p class="store-payment-instructions">' . store_escape($LANG_STORE_COMMERCE['digital_no_shipping']) . '</p>';
+    } else {
+        $content .= '<div id="store-product-shipping-fields">'
+            . '<label>' . store_escape($LANG_STORE_COMMERCE['weight']) . ' (' . store_escape($weightUnit) . ')</label>'
+            . '<input type="number" min="0" step="0.0001" name="weight" value="' . store_escape(isset($product['weight']) ? $product['weight'] : '0.0000') . '">'
+            . '<p class="store-meta">' . store_escape($LANG_STORE_COMMERCE['physical_shipping_help']) . '</p>'
+            . '<h3>' . store_escape($LANG_STORE_COMMERCE['dimensions']) . ' (' . store_escape($dimensionUnit) . ')</h3>'
+            . '<div class="store-checkout-row"><div><label>' . store_escape($LANG_STORE_COMMERCE['length']) . '</label><input type="number" min="0" step="0.0001" name="length" value="' . store_escape(isset($product['length']) ? $product['length'] : '0.0000') . '"></div>'
+            . '<div><label>' . store_escape($LANG_STORE_COMMERCE['width']) . '</label><input type="number" min="0" step="0.0001" name="width" value="' . store_escape(isset($product['width']) ? $product['width'] : '0.0000') . '"></div></div>'
+            . '<label>' . store_escape($LANG_STORE_COMMERCE['height']) . '</label><input type="number" min="0" step="0.0001" name="height" value="' . store_escape(isset($product['height']) ? $product['height'] : '0.0000') . '">'
+            . '</div>';
     }
+
+    $content .= '<button class="store-primary-button" type="submit">' . store_escape($LANG_STORE['save']) . '</button></form></section></div>';
 
     COM_output(COM_createHTMLDocument($content, array('pagetitle' => $LANG_STORE_COMMERCE['product_tax_shipping'])));
     exit;
