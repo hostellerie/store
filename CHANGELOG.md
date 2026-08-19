@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.7.1 - 0.7.0 upgrade and commerce hardening
+
+This release increments Store after the previously distributed 0.7.0 alpha archive and provides a clean Geeklog upgrade path from that installed version.
+
+### Changed
+
+- Added a dedicated 0.7.0 → 0.7.1 database migration.
+- Normalized legacy monetary columns to `DECIMAL(12,4)` where required by the 0.7 commerce engine.
+- Added lookup indexes for order country and tax-class references.
+- Hardened tax and shipping reference validation and deletion guards.
+- Integrated tax class, weight and dimensions into the main product editor.
+- Moved physical product details below the full public product description.
+- Removed duplicate visual presentation of shipping tax in administration order totals.
+- Updated plugin metadata and upgrade reporting to 0.7.1.
+
+### Upgrade
+
+Geeklog installations already running Store 0.7.0 should use the normal plugin upgrade mechanism. Historical order, tax and shipping snapshots are preserved; the migration does not recalculate old commercial data.
+
 ## 0.7.0 alpha - International taxes, shipping and order totals
 
 This development snapshot introduces Store's first international commerce calculation layer. It is intended for testing before the 0.7.0 milestone is finalized.
