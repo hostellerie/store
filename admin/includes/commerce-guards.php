@@ -71,6 +71,12 @@ function store_commerce_guard_duplicate($tableKey, $field, $value, $extraWhere)
     return DB_getItem($_TABLES[$tableKey], 'id', $where) !== '';
 }
 
+function store_commerce_guard_priority($value)
+{
+    $value = (int) $value;
+    return $value >= 0 && $value <= 65535;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     return;
 }
@@ -82,6 +88,13 @@ if ($guardAction === 'commerce_save_tax_class') {
     $code = trim(preg_replace('/[^a-z0-9_-]+/', '-', $code), '-');
     if ($code !== '' && store_commerce_guard_duplicate('store_tax_classes', 'code', $code, '')) {
         store_commerce_guard_redirect($LANG_STORE_COMMERCE['duplicate_tax_class']);
+    }
+}
+
+if ($guardAction === 'commerce_save_tax_zone' || $guardAction === 'commerce_save_shipping_zone') {
+    $priority = isset($_POST['priority']) ? (int) $_POST['priority'] : 100;
+    if (!store_commerce_guard_priority($priority)) {
+        store_commerce_guard_redirect($LANG_STORE_COMMERCE['invalid_priority']);
     }
 }
 
@@ -107,7 +120,7 @@ if ($guardAction === 'commerce_save_tax_rate') {
     if ($rate < 0 || $rate > 1000) {
         store_commerce_guard_redirect($LANG_STORE_COMMERCE['invalid_tax_rate']);
     }
-    if ($priority < 0 || $priority > 65535) {
+    if (!store_commerce_guard_priority($priority)) {
         store_commerce_guard_redirect($LANG_STORE_COMMERCE['invalid_priority']);
     }
 }
@@ -126,6 +139,7 @@ if ($guardAction === 'commerce_save_shipping_method') {
     $code = trim(preg_replace('/[^a-z0-9_-]+/', '-', $code), '-');
     $minimumWeight = max(0, isset($_POST['minimum_weight']) ? (float) $_POST['minimum_weight'] : 0);
     $maximumWeight = max(0, isset($_POST['maximum_weight']) ? (float) $_POST['maximum_weight'] : 0);
+    $sortOrder = isset($_POST['sort_order']) ? (int) $_POST['sort_order'] : 100;
 
     if (!store_commerce_guard_exists('store_shipping_zones', $zoneId, true)) {
         store_commerce_guard_redirect($LANG_STORE_COMMERCE['invalid_shipping_zone']);
@@ -135,6 +149,9 @@ if ($guardAction === 'commerce_save_shipping_method') {
     }
     if ($maximumWeight > 0 && $maximumWeight < $minimumWeight) {
         store_commerce_guard_redirect($LANG_STORE_COMMERCE['invalid_weight_range']);
+    }
+    if (!store_commerce_guard_priority($sortOrder)) {
+        store_commerce_guard_redirect($LANG_STORE_COMMERCE['invalid_sort_order']);
     }
     if ($code !== '' && store_commerce_guard_duplicate(
         'store_shipping_methods',
@@ -158,7 +175,8 @@ if ($guardAction === 'commerce_delete') {
         $usedByProducts = store_commerce_guard_count('store_products', 'tax_class_id=' . $id);
         $usedByRates = store_commerce_guard_count('store_tax_rates', 'tax_class_id=' . $id);
         $usedByShipping = store_commerce_guard_count('store_shipping_methods', 'tax_class_id=' . $id);
-        if ($usedByProducts + $usedByRates + $usedByShipping > 0) {
+        $usedByOrders = store_commerce_guard_count('store_order_items', 'tax_class_id=' . $id);
+        if ($usedByProducts + $usedByRates + $usedByShipping + $usedByOrders > 0) {
             store_commerce_guard_redirect($LANG_STORE_COMMERCE['delete_tax_class_in_use']);
         }
     }
