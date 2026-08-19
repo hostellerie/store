@@ -29,20 +29,21 @@ function store_admin_editor070($product, $message)
         . store_commerce_tax_class_select(isset($product['tax_class_id']) ? $product['tax_class_id'] : 0, 'tax_class_id')
         . '<div id="store-product-logistics-fields">'
         . '<p class="store-meta">' . store_escape($LANG_STORE_COMMERCE['physical_shipping_help']) . '</p>'
-        . '<div class="store-product-commerce-grid">'
+        . '<div class="store-checkout-row">'
         . '<div><label>' . store_escape($LANG_STORE_COMMERCE['weight']) . ' (' . store_escape($weightUnit) . ')</label>'
         . '<input type="number" min="0" step="0.0001" name="weight" value="'
         . store_escape(isset($product['weight']) ? $product['weight'] : '0.0000') . '"></div>'
         . '<div><label>' . store_escape($LANG_STORE_COMMERCE['length']) . ' (' . store_escape($dimensionUnit) . ')</label>'
         . '<input type="number" min="0" step="0.0001" name="length" value="'
-        . store_escape(isset($product['length']) ? $product['length'] : '0.0000') . '"></div>'
+        . store_escape(isset($product['length']) ? $product['length'] : '0.0000') . '"></div></div>'
+        . '<div class="store-checkout-row">'
         . '<div><label>' . store_escape($LANG_STORE_COMMERCE['width']) . ' (' . store_escape($dimensionUnit) . ')</label>'
         . '<input type="number" min="0" step="0.0001" name="width" value="'
         . store_escape(isset($product['width']) ? $product['width'] : '0.0000') . '"></div>'
         . '<div><label>' . store_escape($LANG_STORE_COMMERCE['height']) . ' (' . store_escape($dimensionUnit) . ')</label>'
         . '<input type="number" min="0" step="0.0001" name="height" value="'
-        . store_escape(isset($product['height']) ? $product['height'] : '0.0000') . '"></div>'
-        . '</div></div>';
+        . store_escape(isset($product['height']) ? $product['height'] : '0.0000') . '"></div></div>'
+        . '</div>';
 
     if ($id > 0) {
         $panel .= '<p class="store-meta"><a href="?action=product_commerce&id=' . $id . '">'
