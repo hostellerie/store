@@ -2,11 +2,11 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Store Plugin 0.7.0                                                       |
+// | Store Plugin 0.7.1                                                       |
 // +---------------------------------------------------------------------------+
 // | routes-home070.php                                                       |
 // |                                                                           |
-// | Store 0.7.0 administration home with commerce configuration shortcuts.   |
+// | Store 0.7 administration home with commerce configuration shortcuts.      |
 // +---------------------------------------------------------------------------+
 // | Copyright (C) 2026 by Geeklog Store contributors                         |
 // +---------------------------------------------------------------------------+
@@ -95,7 +95,7 @@ while ($row = DB_fetchArray($result)) {
 }
 
 $content .= '</table></div></section>';
-$content .= '<p class="store-version store-meta">' . store_escape($LANG_STORE['version']) . '</p></div>';
+$content .= '<p class="store-version store-meta">Version ' . store_escape(plugin_getversion_store()) . '</p></div>';
 
 COM_output(COM_createHTMLDocument($content, array('pagetitle' => $LANG_STORE['admin_title'])));
 exit;
