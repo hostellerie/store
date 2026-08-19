@@ -4,18 +4,6 @@
 // +---------------------------------------------------------------------------+
 // | Store Plugin 0.7.0                                                       |
 // +---------------------------------------------------------------------------+
-// | install_defaults.php                                                     |
-// |                                                                           |
-// | Default Store configuration and Configuration API setup.                  |
-// +---------------------------------------------------------------------------+
-// | Copyright (C) 2026 by Geeklog Store contributors                         |
-// +---------------------------------------------------------------------------+
-// |                                                                           |
-// | This program is free software; you can redistribute it and/or             |
-// | modify it under the terms of the GNU General Public License               |
-// | as published by the Free Software Foundation; either version 2            |
-// | of the License, or (at your option) any later version.                    |
-// +---------------------------------------------------------------------------+
 
 if (isset($_SERVER['PHP_SELF']) && stripos($_SERVER['PHP_SELF'], basename(__FILE__)) !== false) {
     die('This file can not be used on its own!');
@@ -77,8 +65,8 @@ function plugin_initconfig_store()
         $c->add('fs_commerce', null, 'fieldset', 0, 0, null, 0, true, 'store', 3);
         $c->add('tax_enabled', $_STORE_DEFAULT['tax_enabled'], 'select', 0, 0, 0, 10, true, 'store', 3);
         $c->add('prices_include_tax', $_STORE_DEFAULT['prices_include_tax'], 'select', 0, 0, 0, 20, true, 'store', 3);
-        $c->add('tax_basis', $_STORE_DEFAULT['tax_basis'], 'text', 0, 0, 0, 30, true, 'store', 3);
-        $c->add('tax_rounding', $_STORE_DEFAULT['tax_rounding'], 'text', 0, 0, 0, 40, true, 'store', 3);
+        $c->add('tax_basis', $_STORE_DEFAULT['tax_basis'], 'select', 0, 0, 2, 30, true, 'store', 3);
+        $c->add('tax_rounding', $_STORE_DEFAULT['tax_rounding'], 'select', 0, 0, 3, 40, true, 'store', 3);
         $c->add('shipping_enabled', $_STORE_DEFAULT['shipping_enabled'], 'select', 0, 0, 0, 50, true, 'store', 3);
 
         $c->add('fs_display', null, 'fieldset', 0, 0, null, 0, true, 'store', 4);
