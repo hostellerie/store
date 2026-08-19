@@ -46,7 +46,12 @@ function store_commerce_guard_count($tableKey, $where)
         return 0;
     }
 
-    return (int) DB_count($_TABLES[$tableKey], '*', $where);
+    $result = DB_query("SELECT COUNT(*) AS total FROM {$_TABLES[$tableKey]} WHERE $where", 1);
+    if (DB_error() || DB_numRows($result) !== 1) {
+        return 0;
+    }
+    $row = DB_fetchArray($result);
+    return isset($row['total']) ? (int) $row['total'] : 0;
 }
 
 function store_commerce_guard_duplicate($tableKey, $field, $value, $extraWhere)
