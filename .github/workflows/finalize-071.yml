@@ -2,7 +2,6 @@ name: Finalize Store 0.7.1
 on:
   push:
     branches: [feature/0.7.0-taxes-shipping-totals]
-    paths: [.github/workflows/finalize-071.yml]
 permissions:
   contents: write
 jobs:
@@ -17,13 +16,9 @@ jobs:
         run: |
           from pathlib import Path
 
-          # plugin.xml
           p=Path('plugin.xml'); s=p.read_text(); s=s.replace('<pi_version>0.7.0</pi_version>','<pi_version>0.7.1</pi_version>'); s=s.replace('https://github.com/Geeklog-Plugins/store','https://github.com/hostellerie/store'); p.write_text(s)
-
-          # autoinstall
           p=Path('autoinstall.php'); s=p.read_text(); s=s.replace('Store Plugin 0.7.0','Store Plugin 0.7.1'); s=s.replace("'pi_version'      => '0.7.0'","'pi_version'      => '0.7.1'"); s=s.replace('https://github.com/Geeklog-Plugins/store','https://github.com/hostellerie/store'); p.write_text(s)
 
-          # functions: version + 0.7.1 migration
           p=Path('functions.inc'); s=p.read_text(); s=s.replace("return '0.7.0';\n}\n\nfunction plugin_chkVersion_store()\n{\n    return '0.7.0';","return '0.7.1';\n}\n\nfunction plugin_chkVersion_store()\n{\n    return '0.7.1';")
           old="""    if (version_compare($installed, '0.7.0', '<')) {
         require_once $_CONF['path'] . 'plugins/store/includes/upgrade070.php';
@@ -62,7 +57,6 @@ jobs:
           if old not in s: raise SystemExit('functions upgrade block not found')
           s=s.replace(old,new,1); s=s.replace('Store Plugin 0.7.0','Store Plugin 0.7.1',1); p.write_text(s)
 
-          # Remove double tax presentation in admin order totals.
           p=Path('admin/includes/routes-orders070.php'); s=p.read_text();
           block="""    if (store_money_to_minor($shippingTax) !== 0) {
         $html .= '<tr><th colspan=\"3\">' . store_escape($lang['shipping_tax']) . '</th><th>'
@@ -72,18 +66,14 @@ jobs:
 """
           s=s.replace(block,''); s=s.replace('Store Plugin 0.7.0','Store Plugin 0.7.1'); p.write_text(s)
 
-          # Fresh schema indexes.
           p=Path('sql/mysql_install.php'); s=p.read_text(); s=s.replace('Store Plugin 0.7.0','Store Plugin 0.7.1')
-          s=s.replace('KEY store_active (active)\n) ENGINE=MyISAM','KEY store_active (active),\n  KEY store_tax_class (tax_class_id)\n) ENGINE=MyISAM') if 'KEY store_tax_class (tax_class_id)' not in s else s
           s=s.replace('KEY store_order_source (order_source),\n  KEY store_order_created (created)','KEY store_order_source (order_source),\n  KEY store_order_country (country_code),\n  KEY store_order_created (created)')
           s=s.replace('KEY store_shipping_method_code (code)\n) ENGINE=MyISAM','KEY store_shipping_method_code (code),\n  KEY store_shipping_method_tax_class (tax_class_id)\n) ENGINE=MyISAM')
           p.write_text(s)
 
-          # language version display
           for f in ['language/english.php','language/french.php','language/french_france.php']:
               p=Path(f); s=p.read_text().replace("'version' => 'Version 0.7.0'","'version' => 'Version 0.7.1'"); p.write_text(s)
 
-          # Changelog
           p=Path('CHANGELOG.md'); s=p.read_text();
           entry="""## 0.7.1\n\n- Incremented the plugin version for upgrades from the previously distributed 0.7.0 alpha.\n- Added a dedicated 0.7.0 → 0.7.1 migration.\n- Normalized legacy monetary columns to DECIMAL(12,4).\n- Added lookup indexes for country and tax-class references.\n- Hardened tax/shipping reference validation and deletion guards.\n- Integrated tax class, weight and dimensions into the main product editor.\n- Moved physical product details below the full public description.\n- Removed duplicate visual presentation of shipping tax in admin order totals.\n\n"""
           if not s.startswith('## 0.7.1'):
