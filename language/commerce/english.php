@@ -90,6 +90,7 @@ $LANG_STORE_COMMERCE = array(
     'height' => 'Height',
     'physical_shipping_help' => 'Weight and dimensions apply to physical products. The configured Store units are used.',
     'digital_no_shipping' => 'Digital products do not use weight or dimensions. Any previous logistics values are cleared when this page is saved.',
+    'advanced_commerce_settings' => 'Open advanced tax and shipping settings for this product',
     'no_tax_class' => 'No tax class',
     'neutral_tax_notice' => 'Store does not install national tax percentages. Configure only the rates that apply to your business.',
     'neutral_shipping_notice' => 'Store does not assume a carrier or country. Add shipping zones and methods according to your own operation.'
