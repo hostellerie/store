@@ -1,0 +1,135 @@
+name: Move Store physical details
+
+on:
+  push:
+    branches:
+      - feature/0.7.0-taxes-shipping-totals
+    paths:
+      - .github/workflows/move-physical-details.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/0.7.0-taxes-shipping-totals
+
+      - name: Move technical product details below description
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('public_html/index.php')
+          text = path.read_text()
+
+          old = '''        if (store_product_uses_stock($product)) {
+            $weight = isset($product['weight']) ? (float) $product['weight'] : 0;
+            $length = isset($product['length']) ? (float) $product['length'] : 0;
+            $width = isset($product['width']) ? (float) $product['width'] : 0;
+            $height = isset($product['height']) ? (float) $product['height'] : 0;
+            $weightUnit = isset($_STORE_CONF['weight_unit']) ? $_STORE_CONF['weight_unit'] : 'kg';
+            $dimensionUnit = isset($_STORE_CONF['dimension_unit']) ? $_STORE_CONF['dimension_unit'] : 'cm';
+            if ($weight > 0 || $length > 0 || $width > 0 || $height > 0) {
+                $content .= '<div class="store-meta store-product-measurements"><strong>'
+                    . store_escape($LANG_STORE['physical_details']) . '</strong>';
+                if ($weight > 0) {
+                    $content .= '<br>' . store_escape($LANG_STORE['weight']) . ': '
+                        . store_escape(store_format_measurement($weight) . ' ' . $weightUnit);
+                }
+                if ($length > 0 || $width > 0 || $height > 0) {
+                    $dimensions = array(
+                        store_format_measurement($length),
+                        store_format_measurement($width),
+                        store_format_measurement($height)
+                    );
+                    $content .= '<br>' . store_escape($LANG_STORE['dimensions']) . ': '
+                        . store_escape(implode(' × ', $dimensions) . ' ' . $dimensionUnit);
+                }
+                $content .= '</div>';
+            }
+        }
+
+'''
+          if old not in text:
+              raise SystemExit('Old physical details block not found')
+          text = text.replace(old, '', 1)
+
+          anchor = '''        if ($product['description'] !== '') {
+            $content .= '<section class="store-product-description"><h2>'
+                . store_escape($LANG_STORE['description']) . '</h2><div>'
+                . nl2br(store_escape($product['description'])) . '</div></section>';
+        }
+
+'''
+          if anchor not in text:
+              raise SystemExit('Description anchor not found')
+
+          block = '''        if (store_product_uses_stock($product)) {
+            $weight = isset($product['weight']) ? (float) $product['weight'] : 0;
+            $length = isset($product['length']) ? (float) $product['length'] : 0;
+            $width = isset($product['width']) ? (float) $product['width'] : 0;
+            $height = isset($product['height']) ? (float) $product['height'] : 0;
+            $weightUnit = isset($_STORE_CONF['weight_unit']) ? $_STORE_CONF['weight_unit'] : 'kg';
+            $dimensionUnit = isset($_STORE_CONF['dimension_unit']) ? $_STORE_CONF['dimension_unit'] : 'cm';
+            if ($weight > 0 || $length > 0 || $width > 0 || $height > 0) {
+                $content .= '<section class="store-product-technical"><h2>'
+                    . store_escape($LANG_STORE['physical_details']) . '</h2><dl class="store-product-technical-list">';
+                if ($weight > 0) {
+                    $content .= '<dt>' . store_escape($LANG_STORE['weight']) . '</dt><dd>'
+                        . store_escape(store_format_measurement($weight) . ' ' . $weightUnit) . '</dd>';
+                }
+                if ($length > 0 || $width > 0 || $height > 0) {
+                    $dimensions = array(
+                        store_format_measurement($length),
+                        store_format_measurement($width),
+                        store_format_measurement($height)
+                    );
+                    $content .= '<dt>' . store_escape($LANG_STORE['dimensions']) . '</dt><dd>'
+                        . store_escape(implode(' × ', $dimensions) . ' ' . $dimensionUnit) . '</dd>';
+                }
+                $content .= '</dl></section>';
+            }
+        }
+
+'''
+          text = text.replace(anchor, anchor + block, 1)
+          path.write_text(text)
+
+      - name: Add technical block styles
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('functions.inc')
+          text = path.read_text()
+          marker = '.store-product-measurements'
+          if marker in text:
+              # Existing inline style registration already has nearby product CSS; append once.
+              css = '.store-product-technical{margin-top:1.5rem;padding:1rem 1.25rem;border:1px solid rgba(0,0,0,.12);border-radius:8px;background:rgba(255,255,255,.7)}.store-product-technical h2{margin-top:0}.store-product-technical-list{display:grid;grid-template-columns:max-content 1fr;gap:.4rem 1rem;margin:0}.store-product-technical-list dt{font-weight:600}.store-product-technical-list dd{margin:0}'
+              if '.store-product-technical{' not in text:
+                  idx = text.find('</style>')
+                  if idx != -1:
+                      text = text[:idx] + css + text[idx:]
+                      path.write_text(text)
+
+      - name: Set up PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+
+      - name: Lint changed PHP files
+        run: |
+          php -l public_html/index.php
+          php -l functions.inc
+
+      - name: Commit changes
+        run: |
+          git config user.name hostellerie
+          git config user.email hostellerie.org@gmail.com
+          git add public_html/index.php functions.inc
+          git commit -m "Move physical details below product description" || exit 0
+          git push
