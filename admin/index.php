@@ -5,7 +5,7 @@
 // | Store Plugin 0.7.0                                                       |
 // +---------------------------------------------------------------------------+
 // | index.php                                                                |
-// |                                                                           |
+// |                                                                          |
 // | Administration interface for products, orders, POS and commerce setup.   |
 // +---------------------------------------------------------------------------+
 // | Copyright (C) 2026 by Geeklog Store contributors                         |
@@ -57,6 +57,7 @@ require_once $commerceLanguageFile;
 
 require_once __DIR__ . '/includes/helpers.php';
 require_once __DIR__ . '/includes/editor.php';
+require_once __DIR__ . '/includes/commerce-guards.php';
 require_once __DIR__ . '/includes/routes-commerce.php';
 require_once __DIR__ . '/includes/routes-product-commerce.php';
 require_once __DIR__ . '/includes/routes-core.php';
