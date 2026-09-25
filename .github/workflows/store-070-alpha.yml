@@ -1,0 +1,91 @@
+name: Store 0.7.1 checks
+
+on:
+  push:
+    branches:
+      - feature/0.7.1-hardening
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  php-lint:
+    name: PHP ${{ matrix.php }} checks
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php:
+          - '5.6'
+          - '8.3'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Lint PHP sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+              php -l "$file"
+          done < <(find . -type f \( -name '*.php' -o -name 'functions.inc' \) -print0)
+
+      - name: Run commerce calculator regression tests
+        run: php tests/commerce070_test.php
+
+      - name: Verify 0.7.1 version and upgrade metadata
+        shell: bash
+        run: |
+          grep -q '<pi_version>0.7.1</pi_version>' plugin.xml
+          grep -q "'pi_version'.*'0.7.1'" autoinstall.php
+          grep -q "return '0.7.1';" functions.inc
+          grep -q 'upgrade071.php' functions.inc
+          grep -q "pi_version = '0.7.1'" functions.inc
+          grep -q 'config.store.tab_display' functions.inc
+
+      - name: Reject tab indentation
+        shell: bash
+        run: |
+          if grep -RIn $'^\t' --include='*.php' --include='functions.inc' .; then
+              echo 'Tab-indented PHP lines found. Store uses four spaces.'
+              exit 1
+          fi
+
+  build-package:
+    name: Build installable Store 0.7.1 ZIP
+    runs-on: ubuntu-latest
+    needs: php-lint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Stage Geeklog plugin archive
+        shell: bash
+        run: |
+          mkdir -p package/store
+          rsync -a \
+              --exclude='.git' \
+              --exclude='.github' \
+              --exclude='tools' \
+              --exclude='tests' \
+              --exclude='package' \
+              ./ package/store/
+          cd package
+          zip -r ../store_0.7.1.zip store
+
+      - name: Upload Store 0.7.1 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: store-0.7.1
+          path: store_0.7.1.zip
+          if-no-files-found: error

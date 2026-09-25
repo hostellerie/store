@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Store Plugin 0.6.5                                                       |
+// | Store Plugin 0.7.1                                                       |
 // +---------------------------------------------------------------------------+
 // | functions.inc                                                            |
 // |                                                                          |
@@ -55,6 +55,27 @@ if (!isset($_TABLES['store_order_items'])) {
 if (!isset($_TABLES['store_payments'])) {
     $_TABLES['store_payments'] = $_DB_table_prefix . 'store_payments';
 }
+if (!isset($_TABLES['store_tax_classes'])) {
+    $_TABLES['store_tax_classes'] = $_DB_table_prefix . 'store_tax_classes';
+}
+if (!isset($_TABLES['store_tax_zones'])) {
+    $_TABLES['store_tax_zones'] = $_DB_table_prefix . 'store_tax_zones';
+}
+if (!isset($_TABLES['store_tax_zone_locations'])) {
+    $_TABLES['store_tax_zone_locations'] = $_DB_table_prefix . 'store_tax_zone_locations';
+}
+if (!isset($_TABLES['store_tax_rates'])) {
+    $_TABLES['store_tax_rates'] = $_DB_table_prefix . 'store_tax_rates';
+}
+if (!isset($_TABLES['store_shipping_zones'])) {
+    $_TABLES['store_shipping_zones'] = $_DB_table_prefix . 'store_shipping_zones';
+}
+if (!isset($_TABLES['store_shipping_zone_locations'])) {
+    $_TABLES['store_shipping_zone_locations'] = $_DB_table_prefix . 'store_shipping_zone_locations';
+}
+if (!isset($_TABLES['store_shipping_methods'])) {
+    $_TABLES['store_shipping_methods'] = $_DB_table_prefix . 'store_shipping_methods';
+}
 
 $store_plugin_path = $_CONF['path'] . 'plugins/store/';
 $lang = isset($_CONF['language']) ? $_CONF['language'] : 'english';
@@ -68,6 +89,53 @@ if (file_exists($langfile)) {
 require_once $_CONF['path_system'] . 'classes/config.class.php';
 $store_config = config::get_instance();
 $_STORE_CONF = $store_config->get_config('store');
+
+if (!is_array($_STORE_CONF) || !isset($_STORE_CONF['layout_blocks'])) {
+    require_once $store_plugin_path . 'includes/config071.php';
+    if (!store_config070_ui_ensure()) {
+        COM_errorLog('Store Plugin: failed to update configuration tabs/layout settings.');
+    }
+    $_STORE_CONF = $store_config->get_config('store');
+}
+
+// Store 0.7 centralizes monetary, tax and shipping calculations here.
+require_once $store_plugin_path . 'includes/commerce.php';
+
+/**
+ * Build Geeklog document options for public Store pages.
+ *
+ * layout_blocks describes the columns that remain visible:
+ * none = full width, left = left only, right = right only, both = both.
+ *
+ * @param string $pageTitle
+ * @return array
+ */
+function store_document_options($pageTitle)
+{
+    global $_STORE_CONF;
+
+    $layout = isset($_STORE_CONF['layout_blocks']) ? (string) $_STORE_CONF['layout_blocks'] : 'none';
+    if (!in_array($layout, array('none', 'left', 'right', 'both'), true)) {
+        $layout = 'none';
+    }
+
+    $options = array('pagetitle' => $pageTitle);
+    $options['what'] = ($layout === 'left' || $layout === 'both') ? 'menu' : 'none';
+    $options['rightblock'] = ($layout === 'right' || $layout === 'both');
+    return $options;
+}
+
+/**
+ * Format a product measurement without unnecessary trailing zeroes.
+ *
+ * @param mixed $value
+ * @return string
+ */
+function store_format_measurement($value)
+{
+    $formatted = number_format((float) $value, 4, '.', '');
+    return rtrim(rtrim($formatted, '0'), '.');
+}
 
 function store_escape($value)
 {
@@ -93,7 +161,6 @@ function store_slugify($value)
     return trim($value, '-');
 }
 
-
 /**
  * Return true when inventory applies to a product.
  *
@@ -107,8 +174,6 @@ function store_product_uses_stock($product)
 {
     return !isset($product['product_type']) || $product['product_type'] !== 'digital';
 }
-
-
 
 /**
  * Return whether Geeklog's bundled File Manager is available.
@@ -155,7 +220,6 @@ function store_valid_image_url($value)
     $scheme = strtolower($parts['scheme']);
     return ($scheme === 'http' || $scheme === 'https') ? $value : '';
 }
-
 
 function store_product_url($product)
 {
@@ -608,7 +672,6 @@ function store_create_order($customer, $payment_method = 'manual')
     return array('success' => true, 'order_id' => $order_id, 'order_number' => $order_number);
 }
 
-
 /**
  * Return payment methods intended for point-of-sale orders.
  *
@@ -938,7 +1001,7 @@ function plugin_getheadercode_store()
         . '.store-product-short-description{font-size:1.04em;line-height:1.6;margin:20px 0}'
         . '.store-add-cart-box{margin-top:24px;padding-top:20px;border-top:1px solid #e5e7eb}.store-add-cart-box label{display:block;font-weight:700;margin-bottom:8px}'
         . '.store-add-cart-controls{display:flex;gap:10px;align-items:stretch}.store-add-cart-controls input[type=number]{width:86px;box-sizing:border-box}'
-        . '.store-product-description h2{margin-top:0}.store-product-description div{line-height:1.7}'
+        . '.store-product-description h2{margin-top:0}.store-product-description div{line-height:1.7}.store-product-technical{margin-top:18px;padding:20px 24px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,.04)}.store-product-technical h2{margin:0 0 14px}.store-product-technical-list{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:8px 22px;margin:0}.store-product-technical-list dt{font-weight:700;color:#374151}.store-product-technical-list dd{margin:0;color:#111827}'
         . '.store-cart-table{width:100%;border-collapse:collapse}.store-cart-table th,.store-cart-table td{padding:10px;border-bottom:1px solid #ddd;text-align:left}'
         . '.store-cart-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px}.store-checkout-layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:24px;align-items:start}.store-checkout-panel,.store-order-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px;box-shadow:0 3px 12px rgba(0,0,0,.04)}.store-checkout-panel h2,.store-order-card h2{margin-top:0}.store-checkout-form label{display:block;font-weight:700;margin:12px 0 5px}.store-checkout-form input{width:100%;box-sizing:border-box}.store-checkout-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.store-order-status{display:inline-block;border-radius:999px;padding:4px 9px;background:#eef2ff;color:#4338ca;font-weight:700;font-size:.88em}.store-order-meta{display:flex;gap:12px;flex-wrap:wrap;color:#6b7280;font-size:.92em}.store-payment-options{display:grid;gap:10px;margin:18px 0}.store-payment-option{display:block;border:1px solid #d9dee7;border-radius:10px;padding:12px;background:#fff}.store-payment-option input{width:auto;margin-right:8px}.store-payment-instructions{margin-top:12px;padding:12px;border-left:4px solid #6f3a9b;background:#f7f2fb;white-space:pre-line}.store-payment-status{display:inline-block;border-radius:999px;padding:4px 9px;background:#f3f4f6;color:#374151;font-weight:700;font-size:.88em}.store-orders-list{display:grid;gap:14px}.store-order-summary-table{width:100%;border-collapse:collapse}.store-order-summary-table th,.store-order-summary-table td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:left}.store-admin-orders-link{margin-left:6px}.store-pos{max-width:1280px}.store-pos-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(340px,.65fr);gap:18px;align-items:start}.store-pos-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}.store-pos-search{flex:1;min-width:220px;padding:11px 12px;border:1px solid #cfd5df;border-radius:8px}.store-pos-categories{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}.store-pos-filter{border:1px solid #d6dbe3;background:#fff;color:#1f2937;border-radius:999px;padding:6px 11px;cursor:pointer}.store-pos-filter:hover{background:#f8fafc;color:#111}.store-pos-filter.is-active{background:#6f3a9b;color:#fff;border-color:#6f3a9b}.store-pos-products{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px}.store-pos-product{display:flex;flex-direction:column;justify-content:space-between;min-height:210px;border:1px solid #dfe3e8;background:#fff;color:#1f2937;border-radius:10px;padding:10px;text-align:left;cursor:pointer}.store-pos-product:hover{border-color:#6f3a9b;box-shadow:0 3px 10px rgba(0,0,0,.06);color:#111}.store-pos-product[disabled]{opacity:.5;cursor:not-allowed}.store-pos-product-image{display:block;width:100%;height:100px;object-fit:cover;border-radius:7px;background:#f3f4f6;margin-bottom:9px}.store-pos-product-image-placeholder{display:flex;align-items:center;justify-content:center;width:100%;height:100px;border-radius:7px;background:#f3f4f6;color:#9ca3af;margin-bottom:9px;font-size:.82em}.store-pos-product-name{display:block;font-weight:800;color:#111827;font-size:1.02em;line-height:1.2}.store-pos-product-meta{display:block;font-size:.82em;color:#6b7280;margin-top:5px;line-height:1.3}.store-pos-product-stock{display:block;font-size:.8em;color:#4b5563;margin-top:4px}.store-pos-product-price{display:block;font-weight:800;font-size:1.08em;margin-top:10px;color:#111827}.store-pos-ticket{position:sticky;top:12px}.store-pos-lines{display:grid;gap:8px;margin:12px 0}.store-pos-line{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;border-bottom:1px solid #eceff3;padding:8px 0}.store-pos-qty{display:inline-flex;align-items:center;gap:4px}.store-pos-qty button{width:30px;height:30px;border:1px solid #ccd2da;background:#fff;color:#111827;border-radius:5px;cursor:pointer;font-weight:800;font-size:16px;line-height:1}.store-pos-qty button:hover{background:#f3f4f6;color:#111827}.store-pos-qty span{min-width:24px;text-align:center}.store-pos-remove{border:0;background:transparent;color:#b42318!important;cursor:pointer;font-size:1.15em;font-weight:800}.store-pos-remove:hover{color:#8f1d13!important}.store-pos-total{display:flex;justify-content:space-between;align-items:center;border-top:2px solid #2f3440;margin-top:10px;padding-top:12px;font-size:1.25em;font-weight:800}.store-pos-payment-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.store-pos-payment{display:flex;align-items:center;gap:7px;border:1px solid #d9dee7;border-radius:8px;padding:9px;cursor:pointer}.store-pos-customer{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.store-pos-customer input{width:100%;box-sizing:border-box}.store-pos-submit{width:100%;font-size:1.05em;padding:12px 14px}.store-pos-empty{color:#6b7280;padding:14px 0}.store-source-badge{display:inline-block;border-radius:999px;padding:3px 8px;background:#f3f4f6;color:#374151;font-size:.82em;font-weight:700}.store-source-pos{background:#ecfdf3;color:#067647}.store-receipt{max-width:420px;margin:0 auto;background:#fff;padding:22px;border:1px solid #ddd}.store-receipt h1{text-align:center}.store-receipt-meta{text-align:center;color:#6b7280}.store-receipt-line{display:flex;justify-content:space-between;gap:12px;padding:6px 0}.store-receipt-total{font-weight:800;font-size:1.2em;border-top:2px solid #222;margin-top:10px;padding-top:10px}.store-receipt-actions{text-align:center;margin:16px 0}'
         . '.store-admin-table{width:100%;border-collapse:collapse}.store-admin-table th,.store-admin-table td{padding:9px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}'
@@ -966,12 +1029,12 @@ function plugin_getheadercode_store()
 
 function plugin_getversion_store()
 {
-    return '0.6.5';
+    return '0.7.1';
 }
 
 function plugin_chkVersion_store()
 {
-    return '0.6.5';
+    return '0.7.1';
 }
 
 function plugin_upgrade_store()
@@ -1120,9 +1183,26 @@ function plugin_upgrade_store()
     }
 
     // 0.6.5 is a stabilization/documentation release: no schema migration.
-    DB_query("UPDATE {$_TABLES['plugins']} SET pi_version = '0.6.5', pi_gl_version = '2.1.1' WHERE pi_name = 'store'", 1);
+
+    if (version_compare($installed, '0.7.0', '<')) {
+        require_once $_CONF['path'] . 'plugins/store/includes/upgrade070.php';
+        if (!store_upgrade_to_070()) {
+            COM_errorLog('Store Plugin: failed to migrate database to 0.7.0.');
+            return false;
+        }
+    }
+
+    if (version_compare($installed, '0.7.1', '<')) {
+        require_once $_CONF['path'] . 'plugins/store/includes/upgrade071.php';
+        if (!store_upgrade_to_071()) {
+            COM_errorLog('Store Plugin: failed to migrate database to 0.7.1.');
+            return false;
+        }
+    }
+
+    DB_query("UPDATE {$_TABLES['plugins']} SET pi_version = '0.7.1', pi_gl_version = '2.1.1' WHERE pi_name = 'store'", 1);
     if (DB_error()) {
-        COM_errorLog('Store Plugin: failed to update plugin metadata to 0.6.5.');
+        COM_errorLog('Store Plugin: failed to update plugin metadata to 0.7.1.');
         return false;
     }
     return true;
@@ -1131,11 +1211,29 @@ function plugin_upgrade_store()
 function plugin_autouninstall_store()
 {
     return array(
-        'tables' => array('store_payments', 'store_order_items', 'store_orders', 'store_product_images', 'store_products', 'store_categories'),
+        'tables' => array(
+            'store_shipping_methods',
+            'store_shipping_zone_locations',
+            'store_shipping_zones',
+            'store_tax_rates',
+            'store_tax_zone_locations',
+            'store_tax_zones',
+            'store_tax_classes',
+            'store_payments',
+            'store_order_items',
+            'store_orders',
+            'store_product_images',
+            'store_products',
+            'store_categories'
+        ),
         'groups' => array('Store Admin'),
         'features' => array(
             'store.admin',
-            'config.store.tab_main'
+            'config.store.tab_main',
+            'config.store.tab_catalog',
+            'config.store.tab_checkout',
+            'config.store.tab_commerce',
+            'config.store.tab_display'
         ),
         'php_blocks' => array(),
         'vars' => array()
