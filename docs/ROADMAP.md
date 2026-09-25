@@ -22,9 +22,11 @@ PayPal, Stripe and future gateways are payment drivers. They must not own Store 
 
 Store must be able to commercialize billable objects owned by other Geeklog plugins without forcing those objects to become normal Store catalog products.
 
-Examples include bookings, activities, services, training sessions, memberships or other plugin-owned resources.
+Examples include the `bookings`, `activities` and `services` plugins, as well as training sessions, memberships or other plugin-owned resources.
 
 The owning plugin remains authoritative for the business object and its availability. Store remains authoritative for the resulting commercial order, payment records, refunds and immutable financial history.
+
+Plugin identifiers use their canonical plugin names (for example `bookings`), while resource types remain singular where they identify one object (for example `source_type = booking`).
 
 Cross-plugin commerce must use a public, bounded service contract rather than private SQL or direct writes to another plugin's tables.
 
