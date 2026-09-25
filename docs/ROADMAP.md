@@ -18,6 +18,26 @@ Online checkout, POS, payment links, QR sales and future sales channels must sha
 
 PayPal, Stripe and future gateways are payment drivers. They must not own Store business logic. Store calculates products, discounts, taxes, shipping and the final amount before sending a payment request to a provider.
 
+### External billable sources and cross-plugin commerce
+
+Store must be able to commercialize billable objects owned by other Geeklog plugins without forcing those objects to become normal Store catalog products.
+
+Examples include bookings, activities, services, training sessions, memberships or other plugin-owned resources.
+
+The owning plugin remains authoritative for the business object and its availability. Store remains authoritative for the resulting commercial order, payment records, refunds and immutable financial history.
+
+Cross-plugin commerce must use a public, bounded service contract rather than private SQL or direct writes to another plugin's tables.
+
+A source reference should be preserved on each generated commercial object where useful, for example:
+
+```text
+source_plugin = bookings
+source_type   = booking
+source_id     = 123
+```
+
+The Store order/item snapshot must remain valid even if the source object is later edited or deleted.
+
 ### Immutable commercial history
 
 Orders, invoices, refunds and returns must keep snapshots of the commercial values that existed at transaction time: product name, SKU, price, tax, discount, shipping and seller information. Later catalogue changes must not rewrite history.
@@ -81,6 +101,55 @@ Product subtotal
 ```
 
 The result must be reusable by checkout, POS, admin-created orders, payment links, PayPal, Stripe, invoices, refunds and marketplace orders.
+
+### Cross-plugin commerce contract
+
+Introduce a provider-neutral Store service contract so other Geeklog plugins can create commercial orders from plugin-owned billable objects.
+
+Initial goals:
+
+- create an order from an external source without requiring a persistent Store catalog product;
+- accept normalized line data supplied by an authorized source plugin, while Store performs the authoritative commercial calculation;
+- persist `source_plugin`, `source_type`, `source_id` and optional source revision/version metadata;
+- snapshot labels, quantities, prices, taxes, discounts and other commercial values at order creation;
+- return normalized order identifiers, status and payment/checkout information;
+- support idempotency keys so retries cannot create duplicate orders;
+- expose normalized lifecycle events for paid, cancelled, expired, refunded and partially refunded orders;
+- allow the source plugin to reconcile its own state from Store events or explicit status reads;
+- require ACL, CSRF protection where relevant and bounded `PLG_invokeService()`/shared service contracts;
+- forbid direct cross-plugin table writes.
+
+Conceptual flow:
+
+```text
+Activities / Bookings / Services / other plugin
+        │
+        │ billable source
+        ▼
+      Store
+        │
+        ├─ order
+        ├─ immutable commercial snapshot
+        ├─ payment provider
+        └─ refund/payment history
+        │
+        ▼
+source plugin receives normalized lifecycle event
+```
+
+Conceptual service shape:
+
+```text
+store.order.create_from_source
+store.order.read
+store.payment.read
+store.order.cancel
+store.refund.request
+```
+
+A booking or activity that does not require payment must remain usable without Store. Store integration is activated only when a commercial transaction is required.
+
+This contract should be designed before payment links, external payment drivers, ticketing and marketplace work so later features can reuse the same commerce boundary instead of introducing ad-hoc integrations.
 
 ### International tax engine
 
@@ -545,7 +614,7 @@ The architecture should keep room for features that may be scheduled according t
 
 - subscriptions and recurring billing
 - deposits and split payments
-- services and booking products
+- services and booking products built on the cross-plugin commerce contract
 - wishlists
 - customer groups and B2B pricing
 - multi-currency presentation and settlement rules
