@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "id": "store",
+  "name": "Store",
+  "icon": "admin/images/store.svg",
+  "requires": {
+    "geeklog": "2.1.1"
+  }
+}
