@@ -18,6 +18,81 @@ Online checkout, POS, payment links, QR sales and future sales channels must sha
 
 PayPal, Stripe and future gateways are payment drivers. They must not own Store business logic. Store calculates products, discounts, taxes, shipping and the final amount before sending a payment request to a provider.
 
+### Public content interoperability
+
+Store also has a separate role as a **public content provider** for other Geeklog components such as Hello, Hub, XMLSitemap, Agent and future indexing/marketing tools.
+
+This is distinct from the cross-plugin commerce contract below:
+
+- **cross-plugin commerce** lets Store consume billable objects owned by another plugin;
+- **content interoperability** lets other plugins read Store-owned public catalogue content.
+
+The first public content surface should expose **products only**, never private commercial records such as carts, customer orders, payments, addresses, refunds or internal stock operations.
+
+Target Geeklog Item Info contract:
+
+```php
+plugin_getiteminfo_store($id, $what, $uid = 0, $options = array())
+```
+
+The collection form:
+
+```php
+plugin_getiteminfo_store('*', $what, $uid, $options)
+```
+
+should eventually support:
+
+```text
+since
+limit
+order
+```
+
+and return normalized public product fields such as:
+
+```text
+id
+type = store
+subtype = product
+title
+url
+description
+excerpt
+date-created
+date-modified
+image
+category
+price
+currency
+```
+
+Only products eligible for public catalogue display should be returned to non-administrators. Initially this means at least:
+
+```text
+active = 1
+```
+
+Future catalogue visibility rules must remain authoritative inside Store rather than being reimplemented by consumers.
+
+Store should also expose capabilities explicitly, for example:
+
+```php
+plugin_getcapabilities_store()
+```
+
+with at least:
+
+```text
+content.read
+content.collection
+content.url.resolve
+```
+
+Consumers such as Hello must use this contract rather than querying Store tables directly.
+
+This interoperability layer is **not a blocker for the current commerce-engine stabilization work**. It should be implemented once the 1.0 product/publication model is stable enough that Store can define durable visibility semantics.
+
 ### External billable sources and cross-plugin commerce
 
 Store must be able to commercialize billable objects owned by other Geeklog plugins without forcing those objects to become normal Store catalog products.
@@ -610,6 +685,37 @@ Search, categories and sales pages must remain compatible with this model.
 
 ---
 
+# Phase H — Public catalogue interoperability
+
+## Public catalogue interoperability
+
+After the Store 1.0 catalogue/publication model is stable, add a bounded public-content contract for Store products.
+
+Goals:
+
+- add `plugin_getiteminfo_store()`;
+- support single-item and `id='*'` collection reads;
+- add `since`, `limit` and `order`;
+- expose only catalogue-safe fields;
+- keep active/visibility rules inside Store;
+- expose `plugin_getcapabilities_store()`;
+- add interoperability tests for administrator, registered-user and anonymous contexts;
+- document expected consumption by Hello and other Geeklog content consumers;
+- avoid exposing carts, orders, payments, customer data or other private commerce records through this content contract.
+
+Initial validation targets:
+
+```text
+Hello digest source
+Hub/content relationship consumer
+XMLSitemap / indexing consumers
+future Agent/resource consumers
+```
+
+This phase should reuse the same public product URL helpers and catalogue visibility rules already used by Store itself.
+
+---
+
 # Additional reserved extensions
 
 The architecture should keep room for features that may be scheduled according to demand:
@@ -643,6 +749,8 @@ Before each major milestone:
 5. Preserve international configuration and avoid country-specific assumptions in the core.
 6. Keep payment, shipping, tax, marketplace and supplier integrations modular.
 7. Do not introduce telemetry.
+8. Keep content-provider interoperability separate from cross-plugin commerce: Store-owned public products may be exposed as content, while orders/payments/customer records remain private commerce data.
+9. External consumers must use Store's public contracts rather than direct Store-table SQL.
 
 ## Immediate next milestone
 
