@@ -123,6 +123,19 @@ The roadmap includes, among other features:
 
 The detailed roadmap is available in `docs/ROADMAP.md` and can also be viewed from Store administration.
 
+## Public content interoperability
+
+Store is also planned to expose its **public catalogue products** through Geeklog's shared content interoperability conventions so other components such as Hello, Hub and indexing tools can consume product content without querying Store tables directly.
+
+This future content contract is separate from Store's cross-plugin commerce contract:
+
+- content interoperability exposes public product information;
+- cross-plugin commerce creates and manages commercial transactions from external billable sources.
+
+Private commerce data such as carts, customer orders, payments, addresses, refunds and internal stock operations must never be exposed through the public content collection.
+
+Implementation is intentionally deferred until the Store 1.0 catalogue/publication model is stable. See `docs/ROADMAP.md` for the target `plugin_getiteminfo_store()` and capability contract.
+
 ## Marketplace direction
 
 Future marketplace features may include multiple sellers, seller-specific storefronts, products in a shared catalog, vendor-specific administration, platform commissions, multi-vendor orders, seller balances, payouts and vendor reporting.
